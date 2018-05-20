@@ -15,7 +15,18 @@ db_password = "Soe7014Ece"
 app = Chalice(app_name="elderly_track")
 authorizer = IAMAuthorizer()
 
-lam = boto3.client('lambda')
+lam = boto3.client('lambda',
+                   aws_access_key_id='AKIAIVUZMXV4RPNA6TXQ',
+                   aws_secret_access_key='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',
+                   region_name='ap-southeast-1'
+                   )
+pinpoint_client = boto3.client(
+    'pinpoint',
+    aws_access_key_id='AKIAIVUZMXV4RPNA6TXQ',
+    aws_secret_access_key='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',
+    region_name='us-east-1'
+    )
+
 
 @app.route('/v1/user/login_with_email', methods=['POST'], authorizer=authorizer)
 def login():
@@ -34,7 +45,8 @@ def login():
                 result = {"user_id":row[0],"username":row[1],"email":row[2],"role":row[3],"status":row[4]}
                 return json.dumps(result)
     conn.close()
-    
+
+
 @app.route('/v1/beacon/load_distinctUUID', methods=['GET'], authorizer=authorizer)
 def load_distinctUUID():
     conn = connect_database()
@@ -65,6 +77,7 @@ def anonymousLogin():
     conn.close()
     return json.dumps({"user_id":user_id,"username":"anonymous","role":5,"status":10})
 
+
 @app.route('/v1/resident/relatives', methods=['POST'], authorizer=authorizer)
 def get_relatives():
     conn = connect_database()
@@ -94,6 +107,7 @@ def get_relatives():
             results.append({"id":row[0],"fullname":row[1],"dob":str(row[2]),"nric":row[3],"status":row[4],"created_at":str(row[5]),"remark":row[6],"hide_photo":row[7],"image_path":row[8],"thumbnail_path":row[9],"beacons":beacons,"locations":locations})
     return json.dumps(results)
     conn.close()
+
 
 @app.route("/v1/resident/missing", methods=['GET'], authorizer=authorizer)
 def index():
@@ -130,6 +144,7 @@ def index():
     conn.close()
     return json.dumps(result)
 
+
 @app.route('/v1/pinpoint/register_endpoint', methods=['POST'], authorizer=authorizer)
 def register_endpoint():
     conn = connect_database()
@@ -154,6 +169,7 @@ def register_endpoint():
     conn.close()
     return json.dumps({"Message":message})
 
+
 @app.route('/v1/pinpoint/disable_endpoint', methods=['POST'], authorizer=authorizer)
 def disable_endpoint():
     conn = connect_database()
@@ -177,6 +193,7 @@ def disable_endpoint():
     conn.commit()
     conn.close()
     return {"Message":message, "status":status}
+
 
 @app.route('/v1/resident/report_missing',methods=['POST'], authorizer=authorizer)
 def report_resident():
@@ -214,15 +231,16 @@ def report_resident():
         conn.close()
         print(message)
         return {"Message":message}        
-    
+
+
 @app.route('/v1/resident/report_found',methods=['POST'], authorizer=authorizer)
 def report_found_resident():
     json_body = app.current_request.json_body
     message = ""
     beacon_id = json_body['beacon_id']
     user_id = json_body['user_id']
-    longitude = json_body['longitude']
-    latitude = json_body['latitude']
+    longitude = float("%.8f" % json_body['longitude'])
+    latitude = float("%.8f" % json_body['latitude'])
     conn = connect_database()
     with conn.cursor() as cur:
         sql = "SELECT * FROM location WHERE beacon_id={}".format(beacon_id)
@@ -242,8 +260,9 @@ def report_found_resident():
         cur.execute(sql)
     conn.commit()
     conn.close()
-    send_message(beacon_id)
+    prepare_message(beacon_id)
     return {"Message":message}
+
 
 @app.route('/v1/beacon/disable_beacon',methods=['POST'], authorizer=authorizer)
 def disable_beacon():
@@ -270,6 +289,7 @@ def disable_beacon():
     conn.close()
     return {"Message":message}
 
+
 @app.route('/v1/user/notification_status', methods=['POST'], authorizer=authorizer)
 def notification_status():
     conn = connect_database()
@@ -283,7 +303,8 @@ def notification_status():
             status = row[0]
     return {"status":status}
 
-def send_message(beacon_id):
+
+def prepare_message(beacon_id):
     conn = connect_database()
     resident_id = 0
     body = ""
@@ -315,16 +336,29 @@ def send_message(beacon_id):
     payload['title'] = title
     payload['endpoints'] = endpoints
            
-    if endpoints:
-        try:
-            response = lam.invoke(
-                FunctionName='pinpoint_send_messages',
-                InvocationType='Event',
-                Payload=json.dumps(payload)
-            )
-        except Exception as e:
-            print(e)
-            raise e
+    sent_message(payload)
+
+
+def sent_message(event):
+    endpoints = event['endpoints']
+    title = event['title']
+    body = event['body']
+    print("Endpoints: {}".format(endpoints))
+    response = pinpoint_client.send_messages(
+        ApplicationId='b080c5f132c24c52930fe52cf32b7038',
+        MessageRequest={
+            'Endpoints': endpoints,
+            'MessageConfiguration': {
+                'APNSMessage': {
+                    'Action': 'OPEN_APP',
+                    'Body': body,
+                    'Title': title
+                }
+            }
+        }
+    )
+    return response
+
 
 def connect_database():
     try:
