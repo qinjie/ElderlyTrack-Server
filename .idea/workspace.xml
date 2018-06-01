@@ -2,8 +2,57 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="598f9536-1b55-4fbb-9286-b14cfc6b889b" name="Default" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/elderly_track.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/elderly_track.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PyMySQL-0.8.0.dist-info/DESCRIPTION.rst" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/PyMySQL-0.8.0.dist-info/INSTALLER" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/PyMySQL-0.8.0.dist-info/METADATA" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/PyMySQL-0.8.0.dist-info/RECORD" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/PyMySQL-0.8.0.dist-info/WHEEL" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/PyMySQL-0.8.0.dist-info/metadata.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/PyMySQL-0.8.0.dist-info/pbr.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/PyMySQL-0.8.0.dist-info/top_level.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pymysql/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pymysql/_compat.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pymysql/_socketio.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pymysql/charset.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pymysql/connections.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pymysql/constants/CLIENT.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pymysql/constants/COMMAND.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pymysql/constants/CR.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pymysql/constants/ER.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pymysql/constants/FIELD_TYPE.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pymysql/constants/FLAG.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pymysql/constants/SERVER_STATUS.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pymysql/constants/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pymysql/converters.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pymysql/cursors.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pymysql/err.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pymysql/optionfile.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pymysql/tests/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pymysql/tests/base.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pymysql/tests/test_DictCursor.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pymysql/tests/test_SSCursor.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pymysql/tests/test_basic.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pymysql/tests/test_connection.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pymysql/tests/test_converters.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pymysql/tests/test_cursor.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pymysql/tests/test_err.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pymysql/tests/test_example.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pymysql/tests/test_issues.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pymysql/tests/test_load_local.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pymysql/tests/test_nextset.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pymysql/tests/test_optionfile.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pymysql/tests/thirdparty/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pymysql/tests/thirdparty/test_MySQLdb/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pymysql/tests/thirdparty/test_MySQLdb/capabilities.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pymysql/tests/thirdparty/test_MySQLdb/dbapi20.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pymysql/tests/thirdparty/test_MySQLdb/test_MySQLdb_capabilities.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pymysql/tests/thirdparty/test_MySQLdb/test_MySQLdb_dbapi20.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pymysql/tests/thirdparty/test_MySQLdb/test_MySQLdb_nonstandard.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pymysql/times.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pymysql/util.py" beforeDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -17,11 +66,20 @@
       <file leaf-file-name="app.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/app.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="204">
-              <caret line="12" lean-forward="true" selection-start-line="12" selection-end-line="12" />
+            <state relative-caret-position="138">
+              <caret line="385" column="37" lean-forward="true" selection-start-line="385" selection-start-column="37" selection-end-line="385" selection-end-column="37" />
               <folding>
                 <element signature="e#0#11#0" expanded="true" />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="requirements.txt" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/requirements.txt">
+          <provider selected="true" editor-type-id="text-editor">
+            <state>
+              <caret column="7" selection-start-column="7" selection-end-column="7" />
             </state>
           </provider>
         </entry>
@@ -52,10 +110,11 @@
   <component name="NodePackageJsonFileManager">
     <packageJsonPaths />
   </component>
-  <component name="ProjectFrameBounds">
-    <option name="x" value="953" />
-    <option name="width" value="974" />
-    <option name="height" value="1047" />
+  <component name="ProjectFrameBounds" extendedState="6">
+    <option name="x" value="-11" />
+    <option name="y" value="-11" />
+    <option name="width" value="1422" />
+    <option name="height" value="1013" />
   </component>
   <component name="ProjectView">
     <navigator proportions="" version="1">
@@ -66,8 +125,8 @@
         <subPane>
           <expand>
             <path>
-              <item name="elderly_track" type="b2602c69:ProjectViewProjectNode" />
-              <item name="elderly_track" type="462c0819:PsiDirectoryNode" />
+              <item name="ElderlyTrack-Server" type="b2602c69:ProjectViewProjectNode" />
+              <item name="ElderlyTrack-Server" type="462c0819:PsiDirectoryNode" />
             </path>
           </expand>
           <select />
@@ -78,9 +137,10 @@
   </component>
   <component name="PropertiesComponent">
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../elderly_track_proc" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
     <property name="nodejs_npm_path_reset_for_default_project" value="true" />
+    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
   </component>
   <component name="RunDashboard">
     <option name="ruleStates">
@@ -108,7 +168,8 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="953" y="0" width="974" height="1047" extended-state="0" />
+    <frame x="-7" y="-7" width="1295" height="695" extended-state="6" />
+    <editor active="true" />
     <layout>
       <window_info anchor="bottom" id="TODO" order="6" />
       <window_info anchor="bottom" id="Event Log" order="7" side_tool="true" />
@@ -117,7 +178,7 @@
       <window_info anchor="bottom" id="Python Console" order="7" />
       <window_info anchor="bottom" id="Run" order="2" />
       <window_info anchor="bottom" id="Terminal" order="7" />
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.27139875" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.25214675" />
       <window_info anchor="bottom" id="Docker" order="7" show_stripe_button="false" />
       <window_info anchor="right" id="Database" order="3" />
       <window_info anchor="right" id="SciView" order="3" />
@@ -140,6 +201,16 @@
     <option name="myLimit" value="2678400000" />
   </component>
   <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/app.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="102">
+          <caret line="12" lean-forward="true" selection-start-line="12" selection-end-line="12" />
+          <folding>
+            <element signature="e#0#11#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/app.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="4998">
@@ -183,14 +254,23 @@
     <entry file="file://$PROJECT_DIR$/requirements.txt">
       <provider selected="true" editor-type-id="text-editor">
         <state>
-          <caret column="7" lean-forward="true" selection-start-column="7" selection-end-column="7" />
+          <caret column="7" selection-start-column="7" selection-end-column="7" />
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/pymysql/constants/FLAG.py">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/pymysql/constants/FIELD_TYPE.py">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/pymysql/constants/CLIENT.py">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
     <entry file="file://$PROJECT_DIR$/app.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="204">
-          <caret line="12" lean-forward="true" selection-start-line="12" selection-end-line="12" />
+        <state relative-caret-position="138">
+          <caret line="385" column="37" lean-forward="true" selection-start-line="385" selection-start-column="37" selection-end-line="385" selection-end-column="37" />
           <folding>
             <element signature="e#0#11#0" expanded="true" />
           </folding>
