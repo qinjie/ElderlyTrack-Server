@@ -41,6 +41,9 @@ pip install sqlacodegen
 sqlacodegen mysql://root:Soe7014Ece@iot-centre-rds.crqhd2o1amcg.ap-southeast-1.rds.amazonaws.com/elderly_track > models.py
 ```
 
+## marshmallow
+an ORM/ODM/framework-agnostic library for converting complex datatypes, such as objects, to and from native Python datatypes.
+
 ## pipreqs
 Generate pip requirements.txt file based on imports of any project
 ```
