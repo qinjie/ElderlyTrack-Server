@@ -1,9 +1,29 @@
 {
+  "version": "2.0",
+  "app_name": "elderly_track",
+  "environment_variables": {
+  },
   "stages": {
     "dev": {
-      "api_gateway_stage": "api"
+      "api_gateway_stage": "api",
+      "environment_variables": {
+        "PINPOINT_ACCESS_KEY_ID": "AKIAIVUZMXV4RPNA6TXQ",
+        "PINPOINT_SECRET_ACCESS_KEY": "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",
+        "PINPOINT_REGION_NAME": "us-east-1",
+        "DB_HOST": "iot-centre-rds.crqhd2o1amcg.ap-southeast-1.rds.amazonaws.com",
+        "DB_NAME": "elderly_track",
+        "DB_USERNAME": "root",
+        "DB_PASSWORD": "Soe7014Ece"
+      },
+      "lambda_memory_size": 128,
+      "lambda_timeout": 60,
+      "security_group_ids": [
+        "sg-7c94a61b"
+      ],
+      "subnet_ids": [
+        "subnet-23daec55",
+        "subnet-a5b9b4c1"
+      ]
     }
-  },
-  "version": "2.0",
-  "app_name": "elderly_track"
+  }
 }

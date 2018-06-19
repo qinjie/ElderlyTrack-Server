@@ -1,5 +1,7 @@
 import json
 import datetime
+import os
+
 import pymysql
 import boto3
 from chalice import Chalice
@@ -11,20 +13,27 @@ db_name = "elderly_track"
 db_username = "root"
 db_password = "Soe7014Ece"
 
-app = Chalice(app_name="elderly_track")
-authorizer = IAMAuthorizer()
-
-lam = boto3.client('lambda',
-                   aws_access_key_id='AKIAIVUZMXV4RPNA6TXQ',
-                   aws_secret_access_key='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',
-                   region_name='ap-southeast-1'
-                   )
 pinpoint_client = boto3.client(
     'pinpoint',
     aws_access_key_id='AKIAIVUZMXV4RPNA6TXQ',
     aws_secret_access_key='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',
     region_name='us-east-1'
 )
+
+app = Chalice(app_name="elderly_track")
+authorizer = IAMAuthorizer()
+
+# Debug mode
+app.debug = True
+authorizer = None  # Set to None to disable authorization
+
+if os.getenv('DB_HOST', False):
+    raise EnvironmentError('DB_HOST must be set!')
+
+
+@app.route('/v1/hello', methods=['GET'], authorizer=authorizer)
+def hello():
+    return {'hello': 'world'}
 
 
 @app.route('/v1/user/login_with_email', methods=['POST'], authorizer=authorizer)
