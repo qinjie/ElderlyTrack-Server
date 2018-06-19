@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: iot-centre-rds.crqhd2o1amcg.ap-southeast-1.rds.amazonaws.com
--- Generation Time: Jun 18, 2018 at 09:47 AM
+-- Generation Time: Jun 19, 2018 at 08:20 AM
 -- Server version: 5.7.19-log
 -- PHP Version: 7.2.3
 
@@ -73,140 +73,22 @@ CREATE TABLE `caregiver` (
 --
 
 INSERT INTO `caregiver` (`id`, `relative_id`, `resident_id`, `relation`, `created_at`, `updated_at`) VALUES
-(1, 68, 1, 'cousin', '2017-01-22 03:30:16', '0000-00-00 00:00:00'),
-(2, 68, 3, 'son', '2017-01-22 03:30:16', '0000-00-00 00:00:00'),
+(1, 2, 1, 'cousin', '2017-01-22 03:30:16', '2018-06-19 08:12:19'),
 (3, 1, 1, 'son', '2017-02-14 02:11:01', '0000-00-00 00:00:00'),
 (4, 1, 4, 'mom', '2017-02-14 02:11:14', '0000-00-00 00:00:00'),
 (5, 1, 6, 'brother', '2017-02-14 02:11:31', '0000-00-00 00:00:00'),
-(6, 70, 7, 'daughter', '2017-06-08 03:51:32', '0000-00-00 00:00:00'),
-(8, 70, 6, 'dad', '2017-02-17 02:08:37', '0000-00-00 00:00:00'),
-(9, 70, 4, 'mom', '2017-02-17 02:09:12', '0000-00-00 00:00:00'),
-(10, 77, 4, 'dad', '2017-02-27 12:28:48', '0000-00-00 00:00:00'),
-(11, 77, 3, 'mom', '2017-02-23 06:38:02', '0000-00-00 00:00:00'),
-(12, 77, 6, 'baby', '2017-02-23 06:38:58', '0000-00-00 00:00:00'),
-(13, 126, 1, 'father', '2017-03-21 07:29:53', '0000-00-00 00:00:00'),
+(6, 2, 7, 'daughter', '2017-06-08 03:51:32', '2018-06-19 08:14:18'),
+(9, 2, 4, 'dad', '2017-02-17 02:09:12', '2018-06-19 08:15:03'),
+(11, 2, 3, 'mom', '2017-02-23 06:38:02', '2018-06-19 08:12:51'),
 (14, 1, 12, 'dad', '2017-03-22 02:59:26', '0000-00-00 00:00:00'),
-(16, 71, 1, 'wife', '2017-04-26 03:45:37', '0000-00-00 00:00:00'),
-(17, 71, 6, 'bro', '2017-04-26 03:45:49', '0000-00-00 00:00:00'),
-(18, 152, 1, '', '2017-05-22 07:48:52', '0000-00-00 00:00:00'),
-(19, 152, 3, '', '2017-05-22 07:48:52', '0000-00-00 00:00:00'),
-(20, 152, 4, '', '2017-05-22 07:49:09', '0000-00-00 00:00:00'),
-(21, 152, 6, '', '2017-05-22 07:49:09', '0000-00-00 00:00:00'),
-(22, 152, 7, '', '2017-05-22 07:49:30', '0000-00-00 00:00:00'),
-(23, 152, 8, '', '2017-05-22 07:49:30', '0000-00-00 00:00:00'),
-(24, 152, 9, '', '2017-05-22 07:49:44', '0000-00-00 00:00:00'),
-(25, 152, 12, '', '2017-05-22 07:49:44', '0000-00-00 00:00:00'),
-(26, 153, 1, '', '2017-05-22 07:48:52', '0000-00-00 00:00:00'),
-(27, 153, 3, '', '2017-05-22 07:48:52', '0000-00-00 00:00:00'),
-(28, 153, 4, '', '2017-05-22 07:49:09', '0000-00-00 00:00:00'),
-(29, 153, 6, '', '2017-05-22 07:49:09', '0000-00-00 00:00:00'),
-(30, 153, 7, '', '2017-05-22 07:49:30', '0000-00-00 00:00:00'),
-(31, 153, 8, '', '2017-05-22 07:49:30', '0000-00-00 00:00:00'),
-(32, 153, 9, '', '2017-05-22 07:49:44', '0000-00-00 00:00:00'),
-(33, 153, 12, '', '2017-05-22 07:49:44', '0000-00-00 00:00:00'),
-(34, 163, 1, 'friend', '2017-06-05 08:38:04', '0000-00-00 00:00:00'),
-(35, 163, 3, 'friend', '2017-06-05 08:38:11', '0000-00-00 00:00:00'),
-(36, 163, 4, 'friend', '2017-06-05 08:38:21', '0000-00-00 00:00:00'),
-(37, 163, 6, 'friend', '2017-06-05 08:38:29', '0000-00-00 00:00:00'),
-(38, 163, 7, 'friend', '2017-06-05 08:38:35', '0000-00-00 00:00:00'),
-(39, 163, 8, 'friend', '2017-06-05 08:38:39', '0000-00-00 00:00:00'),
-(40, 163, 9, 'friend', '2017-06-05 08:38:45', '0000-00-00 00:00:00'),
-(41, 163, 12, 'friend', '2017-06-05 08:38:51', '0000-00-00 00:00:00'),
-(50, 279, 1, 'Family', '2017-12-15 03:52:27', '0000-00-00 00:00:00'),
-(51, 321, 1, 'Brother', '2018-01-04 02:42:54', '0000-00-00 00:00:00'),
-(52, 320, 1, 'Family', '2018-01-04 05:51:58', '0000-00-00 00:00:00'),
-(53, 319, 1, 'Family', '2018-01-05 02:40:33', '0000-00-00 00:00:00'),
-(54, 358, 1, 'Family', '2018-04-11 04:04:32', '0000-00-00 00:00:00'),
-(55, 380, 1, '', '2018-04-21 01:58:16', '0000-00-00 00:00:00'),
-(56, 380, 6, '', '2018-04-21 01:58:16', '0000-00-00 00:00:00'),
-(57, 380, 9, '', '2018-04-21 01:58:16', '0000-00-00 00:00:00');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `device_token`
---
-
-CREATE TABLE `device_token` (
-  `id` int(10) UNSIGNED NOT NULL,
-  `user_id` int(10) UNSIGNED NOT NULL,
-  `token` varchar(32) NOT NULL DEFAULT '',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
---
--- Dumping data for table `device_token`
---
-
-INSERT INTO `device_token` (`id`, `user_id`, `token`, `created_at`) VALUES
-(221, 68, 'dSJE_SUIM74:APA91bGAA75pn2I6cJ-K', '2017-02-16 08:21:38'),
-(276, 1, 'dSJE_SUIM74:APA91bGAA75pn2I6cJ-K', '2017-02-17 06:16:16'),
-(286, 1, 'dOdYUlpBhAs:APA91bGIfRfWotZgA8Au', '2017-02-20 06:17:51'),
-(302, 68, 'cf9pagA7p1o:APA91bHw7SNCsVUIymVT', '2017-02-23 14:00:04'),
-(305, 68, 'fvCLI1IUg3Y:APA91bG5k9z3NqAF3HN9', '2017-02-24 01:18:04'),
-(418, 1, 'c1h7NJ6QSYY:APA91bFRBhK3zLh6pVOG', '2017-02-28 02:05:53'),
-(425, 68, 'fNhKNHN-Gxs:APA91bE9z4Qs9iMTquoq', '2017-02-28 03:20:24'),
-(434, 68, 'fXfVl1inPw8:APA91bG7W4wwcrlyjCU5', '2017-02-28 08:21:55'),
-(437, 68, 'fb47IVghJkw:APA91bGiZ-GGa4zUYtWD', '2017-03-01 02:50:36'),
-(438, 68, 'cQU4j3pMLa0:APA91bHGDgNjxJHDeH1g', '2017-03-01 02:56:31'),
-(443, 68, 'f4P6D2MulkQ:APA91bFV_5TTDhjq7uNz', '2017-03-01 03:23:45'),
-(447, 68, 'fOQbHisLV_s:APA91bEqVK6R7RjLvEei', '2017-03-01 05:47:32'),
-(449, 68, 'enLI9rDxco0:APA91bHy56oQrN0_lwuK', '2017-03-01 06:30:03'),
-(452, 68, 'esOHqMAmwiA:APA91bGyj-KVdCZL3M4Q', '2017-03-01 06:47:50'),
-(465, 77, 'eplR9bjGVbU:APA91bFV3bRwjZZfhEhu', '2017-03-01 07:45:49'),
-(466, 77, 'eB-pSgO7xco:APA91bGa-EIeSP4_pZ7c', '2017-03-07 02:26:08'),
-(467, 77, 'dWoJmKMYOOU:APA91bGN6P4Xo-2bjS3-', '2017-03-07 02:52:48'),
-(468, 1, 'epeSM7-jH98:APA91bF5Gx0CloWqjIG5', '2017-03-07 07:16:15'),
-(472, 1, 'crtbLY0Xy_Y:APA91bHIlOHAnCCXBLc_', '2017-03-09 01:17:29'),
-(473, 77, 'dzCabrNCVjg:APA91bEjZbYDudCKaEAF', '2017-03-09 03:05:32'),
-(474, 77, 'e_Xq6yk4zJ8:APA91bGIlf6TV5fJv2A8', '2017-03-09 03:21:14'),
-(476, 1, 'cLjlpYguVO0:APA91bEpMfvGrx97a0Qc', '2017-03-13 08:30:52'),
-(479, 1, 'fh3bXFz4j08:APA91bHNeGEJbpreuziz', '2017-03-14 00:50:38'),
-(484, 68, 'eJ-gnMZBxQQ:APA91bFecp-vZEWS-EsX', '2017-03-14 01:37:49'),
-(490, 1, 'ezulXXYF17s:APA91bHQjq9XFSdDhgV3', '2017-03-14 06:16:35'),
-(494, 1, 'longlp', '2017-03-14 09:28:32'),
-(553, 77, 'dccLS7nT6pQ:APA91bFzxENmiXEwAlI5', '2017-03-23 06:37:45'),
-(569, 68, 'foBKRz4Pj6M:APA91bHiABQ4bAZCMSev', '2017-04-26 02:38:44'),
-(573, 68, 'dZLGo0G0nwc:APA91bGuKNTCeF6Ldzg_', '2017-04-26 03:37:26'),
-(574, 68, 'fH25LX2UCno:APA91bGhjpPmDIM-hJTu', '2017-04-26 07:56:18'),
-(575, 77, 'foBKRz4Pj6M:APA91bHiABQ4bAZCMSev', '2017-04-27 01:26:47'),
-(576, 77, 'da59Tsb55pw:APA91bFelzUOsxc0DCEy', '2017-04-27 02:48:43'),
-(584, 71, 'cj02RLvN4BY:APA91bFKZqFGWqzipTSu', '2017-05-03 01:25:35'),
-(608, 71, 'di4tA-WTorg:APA91bF8x9qym9N5Suz0', '2017-06-05 06:42:30'),
-(617, 163, 'fZHOo3lpjms:APA91bEaRaPkq5zu_SH4', '2017-06-05 08:44:26'),
-(620, 163, 'dNFl1ENvQEE:APA91bHZacBhZGb83-Km', '2017-06-05 09:50:37'),
-(622, 163, 'cDFHECci8H4:APA91bFlyopSrTyYgMhL', '2017-06-05 11:33:11'),
-(629, 163, 'diESYWJf_ig:APA91bED-zPjuppLx99h', '2017-06-06 02:11:58'),
-(631, 163, 'cfpIJQWYq9k:APA91bHcKRQka7jVwI0F', '2017-06-06 02:37:44'),
-(632, 163, 'dROInsuXBY8:APA91bFN1sEOW7sGvawv', '2017-06-06 03:18:56'),
-(650, 1, 'f7u-rAjWTI8:APA91bHGNtA261X3Ugyz', '2017-06-08 08:02:43'),
-(653, 68, 'eC6t2P9WpC8:APA91bEH8_jfMCSaAsEN', '2017-06-09 01:48:11'),
-(657, 71, 'dROInsuXBY8:APA91bFN1sEOW7sGvawv', '2017-06-09 02:12:15'),
-(660, 68, 'cDFHECci8H4:APA91bFlyopSrTyYgMhL', '2017-06-09 02:17:03'),
-(681, 1, 'fDdpCx0nikQ:APA91bECVQiMPV2CHLkT', '2017-06-21 13:19:44'),
-(759, 68, 'dCajSYjnBSY:APA91bGxpxlAJqunmUJx', '2017-08-16 02:00:00'),
-(765, 68, 'ecdX0z-yIK4:APA91bH4PbSRr8wlndRi', '2017-08-16 02:29:56'),
-(799, 1, 'fG0DlPmRWqo:APA91bH2jo112vKBdH4g', '2017-11-02 06:53:01'),
-(805, 1, 'cLe9mMG05iE:APA91bHD67xTLz2AsUQT', '2017-11-10 19:13:21'),
-(818, 153, 'fhiq2j-qIIE:APA91bHPQkhsP-r3_fzZ', '2017-12-15 07:14:04'),
-(820, 317, 'e4EoxQiB_nU:APA91bFBtTP_4Qgf_QtX', '2017-12-15 07:41:58'),
-(821, 321, 'eWuWaklFxKc:APA91bEFstKmJZra3nL9', '2017-12-15 07:43:27'),
-(832, 321, 'ffCOY6PKBV0:APA91bH6lSkwrah1VLV9', '2017-12-17 00:08:52'),
-(835, 1, 'eFwDflpx52A:APA91bE-IFUmvF8YzbJp', '2018-01-03 17:04:10'),
-(836, 153, 'dB9B5eRUf5E:APA91bHLpeTy4LtLPuEB', '2018-01-03 20:59:26'),
-(837, 153, 'dAlK2XMEk1E:APA91bFXSG8HVLw1bQ53', '2018-01-03 21:08:55'),
-(839, 153, 'fK37MTvgxeE:APA91bEcXTI4S_on0ziZ', '2018-01-03 22:52:47'),
-(840, 153, 'cHQ4XrDiy6A:APA91bFqudBP6Mz2XF3r', '2018-01-04 00:15:54'),
-(841, 153, 'cGBaIVkrlws:APA91bEznleT2KxW-YCL', '2018-01-04 01:05:46'),
-(848, 320, 'doDfkaRf_f4:APA91bGEsvADZzszv6Vo', '2018-01-04 05:52:27'),
-(853, 321, 'dOHJHaaBfrU:APA91bHy6XPqHmylgIQM', '2018-01-06 08:19:19'),
-(855, 153, 'd8EvZ5XWu08:APA91bHGhqzZ8hz_IesW', '2018-01-24 03:48:47'),
-(856, 153, 'dOHJHaaBfrU:APA91bHy6XPqHmylgIQM', '2018-01-25 03:39:56'),
-(860, 152, 'd_WxMcn7UzQ:APA91bGr0gYS-LYsaCz1', '2018-01-31 09:41:25'),
-(868, 321, 'fp-k3HRDSSo:APA91bHxYj6OFes9QaqF', '2018-02-27 05:46:41'),
-(872, 321, 'c8gROrzIEYQ:APA91bEld2SkeIDzrql5', '2018-02-27 15:23:43'),
-(878, 321, '', '2018-03-02 06:55:47'),
-(884, 321, 'cK-EHLEjID0:APA91bGz_ihu5TDNoCn2', '2018-03-05 11:53:09');
+(22, 1, 7, 'son', '2017-05-22 07:49:30', '2018-06-19 08:15:10'),
+(23, 2, 8, 'uncle', '2017-05-22 07:49:30', '2018-06-19 08:15:15'),
+(35, 1, 3, 'friend', '2017-06-05 08:38:11', '2018-06-19 08:12:49'),
+(39, 1, 8, 'friend', '2017-06-05 08:38:39', '2018-06-19 08:14:11'),
+(40, 1, 9, 'friend', '2017-06-05 08:38:45', '2018-06-19 08:14:03'),
+(41, 2, 12, 'friend', '2017-06-05 08:38:51', '2018-06-19 08:14:00'),
+(56, 2, 6, 'sister', '2018-04-21 01:58:16', '2018-06-19 08:15:08'),
+(57, 2, 9, 'auntie', '2018-04-21 01:58:16', '2018-06-19 08:15:18');
 
 -- --------------------------------------------------------
 
@@ -998,6 +880,14 @@ CREATE TABLE `relative` (
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
+--
+-- Dumping data for table `relative`
+--
+
+INSERT INTO `relative` (`id`, `fullname`, `nric`, `phone`, `email`, `user_id`, `created_at`, `updated_at`) VALUES
+(1, 'Relative One', NULL, NULL, NULL, 153, '2018-06-19 08:11:16', '2018-06-19 08:11:16'),
+(2, 'Relative Two', NULL, NULL, NULL, 279, '2018-06-19 08:11:16', '2018-06-19 08:11:16');
+
 -- --------------------------------------------------------
 
 --
@@ -1023,14 +913,14 @@ CREATE TABLE `resident` (
 --
 
 INSERT INTO `resident` (`id`, `fullname`, `dob`, `nric`, `image_path`, `thumbnail_path`, `hide_photo`, `status`, `remark`, `created_at`, `updated_at`) VALUES
-(1, 'Allan Cheng', '2016-12-07', 'SG0001', 'uploads/human_images/SG0001.png', 'uploads/human_images/thumbnail_SG0001.png', 1, 0, '', '2017-01-26 06:32:50', '2018-06-04 04:19:56'),
-(3, 'Ma Kwei Yan', '2016-12-07', 'SG1003', 'uploads/human_images/SG1003.png', 'uploads/human_images/thumbnail_SG0003.png', 1, 0, '', '2017-01-26 06:33:50', '2018-04-22 17:59:35'),
-(4, 'Matthew Chung', '2016-12-07', 'SG0005', 'uploads/human_images/SG1005.png', 'uploads/human_images/thumbnail_SG0005.png', 1, 0, '', '2017-01-25 10:00:49', '2018-04-22 17:59:53'),
-(6, 'Alex Yew', '2017-01-11', 'SG2111', 'uploads/human_images/SG1111.png', 'uploads/human_images/thumbnail_SG1111.png', 1, 0, '', '2017-01-17 07:01:16', '2018-04-22 18:00:15'),
-(7, 'Yoo Qinjie', '2017-01-11', 'SG1112', 'uploads/human_images/SG1112.png', 'uploads/human_images/thumbnail_SG1112.png', 0, 0, '', '2017-01-25 09:52:34', '2018-04-11 11:02:03'),
-(8, 'Mike Soh', '2017-01-11', 'S11653', 'uploads/human_images/S11653.png', 'uploads/human_images/thumbnail_S11653.png', 0, 0, '', '2017-01-25 06:55:36', '2018-04-11 11:02:04'),
-(9, 'Martin', '1980-01-04', 'SG0069', 'uploads/human_images/SG0069.png', 'uploads/human_images/thumbnail_SG0069.png', 1, 0, '', '2017-01-25 06:55:33', '2018-04-21 01:59:31'),
-(12, 'Tan Soon Lee', '2017-04-15', 'SG113', 'uploads/human_images/SG113.png', 'uploads/human_images/thumbnail_SG113.png', 1, 0, '', '2017-03-22 02:35:07', '2018-04-11 11:02:10');
+(1, 'Allan Cheng', '2016-12-07', 'SG0001', 'uploads/human_images/SG0001.png', 'uploads/human_images/thumbnail_SG0001.png', 1, 1, '', '2017-01-26 06:32:50', '2018-06-19 08:08:21'),
+(3, 'Ma Kwei Yan', '2016-12-07', 'SG1003', 'uploads/human_images/SG1003.png', 'uploads/human_images/thumbnail_SG0003.png', 1, 1, '', '2017-01-26 06:33:50', '2018-06-19 08:08:24'),
+(4, 'Matthew Chung', '2016-12-07', 'SG0005', 'uploads/human_images/SG1005.png', 'uploads/human_images/thumbnail_SG0005.png', 1, 1, '', '2017-01-25 10:00:49', '2018-06-19 08:08:26'),
+(6, 'Alex Yew', '2017-01-11', 'SG2111', 'uploads/human_images/SG1111.png', 'uploads/human_images/thumbnail_SG1111.png', 1, 1, '', '2017-01-17 07:01:16', '2018-06-19 08:08:28'),
+(7, 'Yoo Qinjie', '2017-01-11', 'SG1112', 'uploads/human_images/SG1112.png', 'uploads/human_images/thumbnail_SG1112.png', 0, 1, '', '2017-01-25 09:52:34', '2018-06-19 08:08:30'),
+(8, 'Mike Soh', '2017-01-11', 'S11653', 'uploads/human_images/S11653.png', 'uploads/human_images/thumbnail_S11653.png', 0, 1, '', '2017-01-25 06:55:36', '2018-06-19 08:08:32'),
+(9, 'Martin', '1980-01-04', 'SG0069', 'uploads/human_images/SG0069.png', 'uploads/human_images/thumbnail_SG0069.png', 1, 1, '', '2017-01-25 06:55:33', '2018-06-19 08:08:34'),
+(12, 'Tan Soon Lee', '2017-04-15', 'SG113', 'uploads/human_images/SG113.png', 'uploads/human_images/thumbnail_SG113.png', 1, 1, '', '2017-03-22 02:35:07', '2018-06-19 08:08:36');
 
 -- --------------------------------------------------------
 
@@ -1132,14 +1022,6 @@ ALTER TABLE `caregiver`
   ADD KEY `resident_id` (`resident_id`);
 
 --
--- Indexes for table `device_token`
---
-ALTER TABLE `device_token`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `user_id` (`user_id`,`token`),
-  ADD KEY `userId` (`user_id`);
-
---
 -- Indexes for table `gps`
 --
 ALTER TABLE `gps`
@@ -1228,12 +1110,6 @@ ALTER TABLE `caregiver`
   MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=58;
 
 --
--- AUTO_INCREMENT for table `device_token`
---
-ALTER TABLE `device_token`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=888;
-
---
 -- AUTO_INCREMENT for table `gps`
 --
 ALTER TABLE `gps`
@@ -1267,7 +1143,7 @@ ALTER TABLE `missing`
 -- AUTO_INCREMENT for table `relative`
 --
 ALTER TABLE `relative`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `resident`
@@ -1301,13 +1177,8 @@ ALTER TABLE `beacon`
 -- Constraints for table `caregiver`
 --
 ALTER TABLE `caregiver`
+  ADD CONSTRAINT `caregiver_ibfk_1` FOREIGN KEY (`relative_id`) REFERENCES `relative` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `ct_ur_resident` FOREIGN KEY (`resident_id`) REFERENCES `resident` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
---
--- Constraints for table `device_token`
---
-ALTER TABLE `device_token`
-  ADD CONSTRAINT `devicetoken_userid` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `location`

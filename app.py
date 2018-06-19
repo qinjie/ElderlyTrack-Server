@@ -31,7 +31,7 @@ if os.getenv('DB_HOST', False):
     raise EnvironmentError('DB_HOST must be set!')
 
 
-@app.route('/v1/hello', methods=['GET'], authorizer=authorizer)
+@app.route('/v1/test', methods=['GET'], authorizer=authorizer)
 def hello():
     return {'hello': 'world'}
 
