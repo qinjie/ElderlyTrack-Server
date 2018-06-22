@@ -1,7 +1,8 @@
 # coding: utf-8
 from .base import Base
-from sqlalchemy import Column, DECIMAL, Date, DateTime, ForeignKey, INTEGER, Index, SMALLINT, String, TIMESTAMP, text
+from sqlalchemy import Integer, Column, DECIMAL, Date, DateTime, ForeignKey, Index, SMALLINT, String, TIMESTAMP, text
 from sqlalchemy.orm import relationship
+
 
 class Gps(Base):
     __tablename__ = 'gps'
@@ -9,7 +10,7 @@ class Gps(Base):
         Index('latitude', 'latitude', 'longitude', unique=True),
     )
 
-    id = Column(INTEGER(10), primary_key=True)
+    id = Column(Integer, primary_key=True)
     latitude = Column(DECIMAL(11, 8), nullable=False)
     longitude = Column(DECIMAL(10, 8), nullable=False)
     address = Column(String(200), nullable=False)
@@ -20,11 +21,14 @@ class Gps(Base):
         self.longitude = longitude
         self.address = address
 
+    def __repr__(self):
+        return "%s(%r, %r, %r)" % (self.__class__, self.latitude, self.longitude, self.address)
+
 
 class Locator(Base):
     __tablename__ = 'locator'
 
-    id = Column(INTEGER(10), primary_key=True)
+    id = Column(Integer, primary_key=True)
     serial = Column(String(50), nullable=False, unique=True)
     label = Column(String(100), nullable=False)
     remark = Column(String(500))
@@ -42,14 +46,14 @@ class Locator(Base):
 class Resident(Base):
     __tablename__ = 'resident'
 
-    id = Column(INTEGER(10), primary_key=True)
+    id = Column(Integer, primary_key=True)
     fullname = Column(String(200), nullable=False)
     dob = Column(Date, nullable=False)
     nric = Column(String(20))
     image_path = Column(String(200))
     thumbnail_path = Column(String(200))
-    hide_photo = Column(SMALLINT(2), server_default=text("'0'"))
-    status = Column(SMALLINT(4), server_default=text("'1'"))
+    hide_photo = Column(SMALLINT, server_default=text("'0'"))
+    status = Column(SMALLINT, server_default=text("'1'"))
     remark = Column(String(500))
     created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
     updated_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"))
@@ -62,27 +66,32 @@ class Resident(Base):
 class User(Base):
     __tablename__ = 'user'
 
-    id = Column(INTEGER(10), primary_key=True)
+    id = Column(Integer, primary_key=True)
     username = Column(String(50), unique=True)
     email = Column(String(255))
     endpointID = Column(String(40))
-    pinpoint_status = Column(SMALLINT(4), server_default=text("'1'"))
+    pinpoint_status = Column(SMALLINT, server_default=text("'1'"))
     auth_key = Column(String(32), server_default=text("''"))
     password_hash = Column(String(255), server_default=text("''"))
     access_token = Column(String(32))
     password_reset_token = Column(String(255))
     email_confirm_token = Column(String(255))
     phone_number = Column(String(20))
-    role = Column(INTEGER(10), server_default=text("'10'"))
-    status = Column(SMALLINT(6), server_default=text("'10'"))
-    allowance = Column(INTEGER(10))
-    timestamp = Column(INTEGER(10))
+    role = Column(Integer, server_default=text("'10'"))
+    status = Column(SMALLINT, server_default=text("'10'"))
+    allowance = Column(Integer)
+    timestamp = Column(Integer)
+    last_login = Column(DateTime)
     created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
     updated_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"))
 
     def __init__(self, username, email):
         self.username = username
         self.email = email
+
+    def __repr__(self):
+        return "%s(%r, %r, %r, %r, %r, %r, %r)" % (
+        self.__class__, self.id, self.username, self.email, self.phone_number, self.role, self.status, self.last_login)
 
 
 class Beacon(Base):
@@ -91,11 +100,11 @@ class Beacon(Base):
         Index('uuid', 'uuid', 'major', 'minor', unique=True),
     )
 
-    id = Column(INTEGER(10), primary_key=True)
+    id = Column(Integer, primary_key=True)
     uuid = Column(String(40), nullable=False)
-    major = Column(INTEGER(10), nullable=False)
-    minor = Column(INTEGER(10), nullable=False)
-    status = Column(SMALLINT(2), server_default=text("'1'"))
+    major = Column(Integer, nullable=False)
+    minor = Column(Integer, nullable=False)
+    status = Column(SMALLINT, server_default=text("'1'"))
     resident_id = Column(ForeignKey(u'resident.id', ondelete=u'CASCADE', onupdate=u'CASCADE'), index=True)
     created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
     updated_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"))
@@ -114,8 +123,8 @@ class Caregiver(Base):
         Index('relative_id', 'relative_id', 'resident_id', unique=True),
     )
 
-    id = Column(INTEGER(10), primary_key=True)
-    relative_id = Column(INTEGER(10), nullable=False)
+    id = Column(Integer, primary_key=True)
+    relative_id = Column(Integer, nullable=False)
     resident_id = Column(ForeignKey(u'resident.id', ondelete=u'CASCADE', onupdate=u'CASCADE'), nullable=False,
                          index=True)
     relation = Column(String(50), nullable=False)
@@ -133,13 +142,13 @@ class Caregiver(Base):
 class Missing(Base):
     __tablename__ = 'missing'
 
-    id = Column(INTEGER(10), primary_key=True)
+    id = Column(Integer, primary_key=True)
     resident_id = Column(ForeignKey(u'resident.id', onupdate=u'CASCADE'), nullable=False, index=True)
     reported_at = Column(DateTime, nullable=False, server_default=text("'0000-00-00 00:00:00'"))
     remark = Column(String(500))
     closed_at = Column(Date, server_default=text("'0000-00-00'"))
     closure = Column(String(500))
-    status = Column(INTEGER(2), server_default=text("'1'"))
+    status = Column(SMALLINT, server_default=text("'1'"))
     created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
     updated_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"))
 
@@ -153,7 +162,7 @@ class Missing(Base):
 class Relative(Base):
     __tablename__ = 'relative'
 
-    id = Column(INTEGER(10), primary_key=True)
+    id = Column(Integer, primary_key=True)
     fullname = Column(String(200), nullable=False)
     nric = Column(String(20))
     phone = Column(String(20))
@@ -171,7 +180,7 @@ class Relative(Base):
 class UserToken(Base):
     __tablename__ = 'user_token'
 
-    id = Column(INTEGER(10), primary_key=True)
+    id = Column(Integer, primary_key=True)
     user_id = Column(ForeignKey(u'user.id', ondelete=u'CASCADE', onupdate=u'CASCADE'), nullable=False, index=True)
     token = Column(String(32), nullable=False, unique=True, server_default=text("''"))
     label = Column(String(10))
@@ -189,7 +198,7 @@ class UserToken(Base):
 class Location(Base):
     __tablename__ = 'location'
 
-    id = Column(INTEGER(10), primary_key=True)
+    id = Column(Integer, primary_key=True)
     beacon_id = Column(ForeignKey(u'beacon.id', ondelete=u'CASCADE', onupdate=u'CASCADE'), nullable=False, unique=True)
     latitude = Column(DECIMAL(10, 8), nullable=False)
     longitude = Column(DECIMAL(11, 8), nullable=False)
@@ -215,7 +224,7 @@ class Location(Base):
 class LocationHistory(Base):
     __tablename__ = 'location_history'
 
-    id = Column(INTEGER(10), primary_key=True)
+    id = Column(Integer, primary_key=True)
     beacon_id = Column(ForeignKey(u'beacon.id', ondelete=u'CASCADE', onupdate=u'CASCADE'), nullable=False, index=True)
     latitude = Column(DECIMAL(10, 8), nullable=False)
     longitude = Column(DECIMAL(11, 8), nullable=False)

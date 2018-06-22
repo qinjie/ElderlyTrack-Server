@@ -4,9 +4,20 @@ import os
 
 import pymysql
 import boto3
-from chalice import Chalice
+from chalice import Chalice, NotFoundError, ChaliceViewError, CognitoUserPoolAuthorizer
 from chalice import IAMAuthorizer
 from chalice import BadRequestError
+from chalicelib.db.base import session_factory
+from chalicelib.db.models import User
+from chalicelib.db.schemas import user_public_schema
+import contextlib
+
+## Used in clients
+# lam = boto3.client('lambda',
+#                    aws_access_key_id='AKIAIVUZMXV4RPNA6TXQ',
+#                    aws_secret_access_key='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',
+#                    region_name='ap-southeast-1'
+#                    )
 
 db_host = "iot-centre-rds.crqhd2o1amcg.ap-southeast-1.rds.amazonaws.com"
 db_name = "elderly_track"
@@ -21,14 +32,10 @@ pinpoint_client = boto3.client(
 )
 
 app = Chalice(app_name="elderly_track")
-authorizer = IAMAuthorizer()
 
 # Debug mode
 app.debug = True
 authorizer = None  # Set to None to disable authorization
-
-if os.getenv('DB_HOST', False):
-    raise EnvironmentError('DB_HOST must be set!')
 
 
 @app.route('/v1/test', methods=['GET'], authorizer=authorizer)
@@ -38,21 +45,32 @@ def hello():
 
 @app.route('/v1/user/login_with_email', methods=['POST'], authorizer=authorizer)
 def login():
-    conn = connect_database()
     json_body = app.current_request.json_body
     email = json_body['email']
-    message = ""
+    if not email:
+        raise BadRequestError("Email must be supplied.")
 
-    with conn.cursor() as cur:
-        sql = "SELECT id, username, email, role, status FROM user WHERE email='{}'".format(email)
-        response = cur.execute(sql)
-        if response == 0:
-            raise BadRequestError("email does not exists.")
+    with contextlib.closing(session_factory()) as session:
+        user = session.query(User).filter(User.email == email).first()
+        if not user:
+            raise NotFoundError("Email not found")
         else:
-            for row in cur:
-                result = {"user_id": row[0], "username": row[1], "email": row[2], "role": row[3], "status": row[4]}
-                return json.dumps(result)
-    conn.close()
+            result = user_public_schema.dump(user)
+            if result[1]:  # errors not empty
+                raise ChaliceViewError(result[1])
+            return result[0]
+
+    # conn = connect_database()
+    # with conn.cursor() as cur:
+    #     sql = "SELECT id, username, email, role, status FROM user WHERE email='{}'".format(email)
+    #     response = cur.execute(sql)
+    #     if response == 0:
+    #         raise BadRequestError("email does not exists.")
+    #     else:
+    #         for row in cur:
+    #             result = {"user_id": row[0], "username": row[1], "email": row[2], "role": row[3], "status": row[4]}
+    #             return json.dumps(result)
+    # conn.close()
 
 
 @app.route('/v1/beacon/load_distinctUUID', methods=['GET'], authorizer=authorizer)

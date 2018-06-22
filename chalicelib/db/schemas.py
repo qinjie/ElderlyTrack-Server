@@ -73,12 +73,15 @@ class UserSchema(Schema):
     status = fields.Int(missing=10)
     allowance = fields.Int()
     timestamp = fields.Int()
+    last_login = fields.DateTime()
     created_at = fields.DateTime(dump_only=True)
     updated_at = fields.DateTime(dump_only=True)
 
 
 user_schema = UserSchema()
-user_public_schema = UserSchema(only=('id', 'username', 'email', 'phone_number'))
+user_public_schema = UserSchema(only=('id', 'username', 'email', 'phone_number', 'role', 'status', 'last_login'))
+users_public_schema = UserSchema(many=True,
+                                 only=('id', 'username', 'email', 'phone_number', 'role', 'status', 'last_login'))
 
 
 class BeaconSchema(Schema):
