@@ -4,12 +4,14 @@ import os
 
 import pymysql
 import boto3
-from chalice import Chalice, NotFoundError, ChaliceViewError, CognitoUserPoolAuthorizer
+from chalice import Chalice, NotFoundError, ChaliceViewError, CognitoUserPoolAuthorizer, ConflictError
 from chalice import IAMAuthorizer
 from chalice import BadRequestError
+from sqlalchemy import exc
+
 from chalicelib.db.base import session_factory
-from chalicelib.db.models import User
-from chalicelib.db.schemas import user_public_schema
+from chalicelib.db.models import *
+from chalicelib.db.schemas import *
 import contextlib
 
 ## Used in clients
@@ -18,6 +20,7 @@ import contextlib
 #                    aws_secret_access_key='9FLoyVKgPGSiUj0jKl4B8WMrxAXeiH+/SS8Tw+CZ',
 #                    region_name='ap-southeast-1'
 #                    )
+from chalicelib.utils import SetEncoder
 
 db_host = "iot-centre-rds.crqhd2o1amcg.ap-southeast-1.rds.amazonaws.com"
 db_name = "elderly_track"
@@ -55,37 +58,11 @@ def login():
         if not user:
             raise NotFoundError("Email not found")
         else:
-            result = user_public_schema.dump(user)
-            if result[1]:  # errors not empty
-                raise ChaliceViewError(result[1])
-            return result[0]
-
-    # conn = connect_database()
-    # with conn.cursor() as cur:
-    #     sql = "SELECT id, username, email, role, status FROM user WHERE email='{}'".format(email)
-    #     response = cur.execute(sql)
-    #     if response == 0:
-    #         raise BadRequestError("email does not exists.")
-    #     else:
-    #         for row in cur:
-    #             result = {"user_id": row[0], "username": row[1], "email": row[2], "role": row[3], "status": row[4]}
-    #             return json.dumps(result)
-    # conn.close()
-
-
-@app.route('/v1/beacon/load_distinctUUID', methods=['GET'], authorizer=authorizer)
-def load_distinctUUID():
-    conn = connect_database()
-    beacons = []
-    with conn.cursor() as cur:
-        sql = "SELECT DISTINCT uuid from beacon"
-        response = cur.execute(sql)
-        for row in cur:
-            beacons.append({"uuid": row[0]})
-
-    conn.commit()
-    conn.close()
-    return json.dumps({"beacons": beacons})
+            user_schema = UserSchema(exclude=('password_hash', 'access_token'))
+            result = user_schema.dump(user)
+            if result.errors:  # errors not empty
+                raise ChaliceViewError(result.errors)
+            return result.data
 
 
 @app.route('/v1/user/login_anonymous', methods=['GET'], authorizer=authorizer)
@@ -104,96 +81,336 @@ def anonymousLogin():
     return json.dumps({"user_id": user_id, "username": "anonymous", "role": 5, "status": 10})
 
 
-@app.route('/v1/resident/relatives', methods=['POST'], authorizer=authorizer)
-def get_relatives():
+@app.route("/v1/missing", methods=['GET'], authorizer=authorizer)
+def missing_all():
+    with contextlib.closing(session_factory()) as session:
+        missings = session.query(Missing).all()
+        if not missings:
+            raise NotFoundError("No missing case")
+        else:
+            missings_schema = MissingSchema(many=True, exclude=('resident.caregivers', 'resident.beacons'))
+            result = missings_schema.dump(missings)
+            if result.errors:  # errors not empty
+                raise ChaliceViewError(result.errors)
+            return result.data
+
+
+@app.route("/v1/missing/active", methods=['GET'], authorizer=authorizer)
+def missing_active():
+    with contextlib.closing(session_factory()) as session:
+        missings = session.query(Missing).filter(Missing.status == 1).all()
+        if not missings:
+            raise NotFoundError("No active missing case")
+        else:
+            missings_schema = MissingSchema(many=True, exclude=('resident.caregivers', 'resident.beacons'))
+            result = missings_schema.dump(missings)
+            if result.errors:  # errors not empty
+                raise ChaliceViewError(result.errors)
+            return result.data
+
+
+@app.route("/v1/missing/{id}", methods=['GET'], authorizer=authorizer)
+def missing_one(id):
+    with contextlib.closing(session_factory()) as session:
+        missing = session.query(Missing).filter(Missing.id == id).first()
+        if not missing:
+            raise NotFoundError("Missing case not found")
+        else:
+            missing_schema = MissingSchema()
+            result = missing_schema.dump(missing)
+            if result.errors:  # errors not empty
+                raise ChaliceViewError(result.errors)
+            return result.data
+
+
+@app.route("/v1/resident", methods=['GET'], authorizer=authorizer)
+def resident_all():
+    with contextlib.closing(session_factory()) as session:
+        residents = session.query(Resident).all()
+        if not residents:
+            raise NotFoundError("No resident found")
+        else:
+            residents_schema = ResidentSchema(exclude=('beacons', 'missings', 'caregivers'), many=True)
+            result = residents_schema.dump(residents)
+            if result.errors:  # errors not empty
+                raise ChaliceViewError(result.errors)
+            return result.data
+
+
+@app.route("/v1/resident/active", methods=['GET'], authorizer=authorizer)
+def resident_active():
+    with contextlib.closing(session_factory()) as session:
+        residents = session.query(Resident).filter(Resident.status == 1).all()
+        if not residents:
+            raise NotFoundError("No active resident found")
+        else:
+            residents_schema = ResidentSchema(exclude=('beacons', 'missings', 'caregivers'), many=True)
+            result = residents_schema.dump(residents)
+            if result.errors:  # errors not empty
+                raise ChaliceViewError(result.errors)
+            return result.data
+
+
+@app.route("/v1/resident/{id}", methods=['GET'], authorizer=authorizer)
+def resident_one(id):
+    with contextlib.closing(session_factory()) as session:
+        resident = session.query(Resident).filter(Resident.id == id).first()
+        if not resident:
+            raise NotFoundError("Missing case not found")
+        else:
+            resident_schema = ResidentSchema()
+            result = resident_schema.dump(resident)
+            if result.errors:  # errors not empty
+                raise ChaliceViewError(result.errors)
+            return result.data
+
+
+@app.route("/v1/resident/{id}/caregivers", methods=['GET'], authorizer=authorizer)
+def resident_caregivers(id):
+    with contextlib.closing(session_factory()) as session:
+        resident = session.query(Resident).filter(Resident.id == id).first()
+        if not resident:
+            raise NotFoundError("Missing case not found")
+        else:
+            resident_schema = ResidentSchema(only=('caregivers',))
+            result = resident_schema.dump(resident)
+            if result.errors:  # errors not empty
+                raise ChaliceViewError(result.errors)
+            return result.data
+
+
+@app.route('/v1/beacon', methods=['GET'], authorizer=authorizer)
+def beacon_list():
+    with contextlib.closing(session_factory()) as session:
+        beacons = session.query(Beacon).all()
+        if not beacons:
+            raise NotFoundError("No beacon found")
+        else:
+            beacons_schema = BeaconSchema(many=True, exclude=('resident',))
+            result = beacons_schema.dump(beacons)
+            if result.errors:  # errors not empty
+                raise ChaliceViewError(result.errors)
+            return result.data
+
+
+@app.route('/v1/beacon/{id}', methods=['GET'], authorizer=authorizer)
+def beacon_one(id):
+    with contextlib.closing(session_factory()) as session:
+        beacon = session.query(Beacon).filter(Beacon.id == id).first()
+        if not beacon:
+            raise NotFoundError("No beacon found")
+        else:
+            beacon_schema = BeaconSchema(exclude=('resident.missings',))
+            result = beacon_schema.dump(beacon)
+            if result.errors:  # errors not empty
+                raise ChaliceViewError(result.errors)
+            return result.data
+
+
+@app.route('/v1/beacon/missing', methods=['GET'], authorizer=authorizer)
+def beacon_missing():
+    with contextlib.closing(session_factory()) as session:
+        beacons = session.query(Beacon) \
+            .join(Resident, Resident.id == Beacon.resident_id) \
+            .join(Missing, Missing.resident_id == Resident.id) \
+            .filter(Missing.status == 1).all()
+        if not beacons:
+            raise NotFoundError("No beacon of missing residents found")
+        else:
+            beacons_schema = BeaconSchema(many=True,
+                                          exclude=('resident.caregivers', 'resident.beacons', 'resident.missings'))
+            result = beacons_schema.dump(beacons)
+            if result.errors:  # errors not empty
+                raise ChaliceViewError(result.errors)
+            return result.data
+
+
+@app.route('/v1/beacon/missing_uuid', methods=['GET'], authorizer=authorizer)
+def beacon_missing_uuid():
+    with contextlib.closing(session_factory()) as session:
+        beacons = session.query(Beacon) \
+            .join(Resident, Resident.id == Beacon.resident_id) \
+            .join(Missing, Missing.resident_id == Resident.id) \
+            .filter(Missing.status == 1).all()
+        if not beacons:
+            raise NotFoundError("No beacon of missing residents found")
+        else:
+            uuid_list = set()
+            for beacon in beacons:
+                uuid_list.add(beacon.uuid)
+            return json.dumps({"uuid_list": uuid_list}, cls=SetEncoder)
+
+
+##
+# Report of new missing case automatically close existing active missing cases
+##
+@app.route('/v1/missing', methods=['POST'], authorizer=authorizer)
+def create_missing():
+    json_body = app.current_request.json_body
+
+    # Load json data into object
+    missing_schema = MissingSchema(
+        exclude=('resident.beacons', 'resident.missings', 'resident.missing_active', 'resident.caregivers'))
+    missing, errors = missing_schema.load(json_body)
+    # Invalid JSON body
+    if errors:
+        raise ChaliceViewError(errors)
+
+    with contextlib.closing(session_factory()) as session:
+        try:
+            # Check resident id is valid
+            resident = session.query(Resident).filter(Resident.id == missing.resident_id).first()
+            if not resident:
+                raise NotFoundError('Resident not exists')
+            resident.status = 1
+            session.merge(resident)
+            # Close existing active missing cases
+            session.query(Missing).filter(Missing.resident_id == missing.resident_id, Missing.status == 1) \
+                .update({'status': 0, 'closed_by': missing.reported_by,
+                         'closed_at': datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')})
+            # Add new missing case
+            session.add(missing)
+            # Call flush() to update id value in missing
+            session.flush()
+            session.commit()
+            return missing_schema.dump(missing)
+        except exc.SQLAlchemyError as e:
+            session.rollback()
+            raise ChaliceViewError(str(e))
+
+
+@app.route('/v1/missing/close', methods=['PUT'], authorizer=authorizer)
+def close_missing():
+    json_body = app.current_request.json_body
+
+    # Load json data into object
+    schema = MissingClosingSchema()
+    missing, errors = schema.load(json_body)
+    # Invalid JSON body
+    if errors:
+        raise ChaliceViewError(errors)
+
+    with contextlib.closing(session_factory()) as session:
+        try:
+            # Check resident id is valid
+            resident = session.query(Resident).filter(Resident.id == missing.resident_id).first()
+            if not resident:
+                raise NotFoundError('Resident not exists')
+            resident.status = 0
+            session.merge(resident)
+            # Close existing active missing cases
+            missing = session.query(Missing).filter(Missing.resident_id == missing.resident_id, Missing.status == 1) \
+                .update({'status': 0, 'closed_by': missing.reported_by,
+                         'closed_at': datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')})
+            # Call flush() to update id value in missing
+            session.flush()
+            session.commit()
+            return schema.dump(missing)
+        except exc.SQLAlchemyError as e:
+            session.rollback()
+            raise ChaliceViewError(str(e))
+
+    # json_body = app.current_request.json_body
+    # message = ""
+    # beacon_id = json_body['beacon_id']
+    # user_id = json_body['user_id']
+    # longitude = round(float(json_body['longitude']), 8)
+    # latitude = round(float(json_body['latitude']), 8)
+    # conn = connect_database()
+    # with conn.cursor() as cur:
+    #     sql = "SELECT * FROM location WHERE beacon_id={}".format(beacon_id)
+    #     sql_response = cur.execute(sql)
+    #     if sql_response == 0:
+    #         with conn.cursor() as cur:
+    #             sql = "INSERT INTO location (beacon_id,user_id,longitude,latitude) VALUES ({},{},{},{})".format(
+    #                 beacon_id, user_id, longitude, latitude)
+    #             cur.execute(sql)
+    #         message = "Successfully insert"
+    #     else:
+    #         with conn.cursor() as cur:
+    #             sql = "UPDATE location SET longitude={},latitude={},user_id={} WHERE beacon_id={}".format(longitude,
+    #                                                                                                       latitude,
+    #                                                                                                       user_id,
+    #                                                                                                       beacon_id)
+    #             cur.execute(sql)
+    #         message = "Successfully updated"
+    # with conn.cursor() as cur:
+    #     sql = "INSERT INTO location_history (beacon_id,user_id,longitude,latitude) VALUES ({},{},{},{})".format(
+    #         beacon_id, user_id, longitude, latitude)
+    #     cur.execute(sql)
+    # conn.commit()
+    # conn.close()
+    # prepare_message(beacon_id)
+    # return {"Message": message}
+
+
+@app.route('/v1/beacon/{id}/enable', methods=['PUT'], authorizer=authorizer)
+def disable_beacon():
+    with contextlib.closing(session_factory()) as session:
+        try:
+            beacon = session.query(Beacon).filter(Beacon.id == id, Beacon.status == 0) \
+                .update({'status': 1})
+            # Call flush() to update id value in missing
+            session.flush()
+            session.commit()
+            schema = BeaconSchema(exclude=('resident',))
+            return schema.dump(beacon)
+        except exc.SQLAlchemyError as e:
+            session.rollback()
+            raise ChaliceViewError(str(e))
+
+
+@app.route('/v1/beacon/{id}/disable', methods=['PUT'], authorizer=authorizer)
+def disable_beacon():
+    with contextlib.closing(session_factory()) as session:
+        try:
+            beacon = session.query(Beacon).filter(Beacon.id == id, Beacon.status == 1) \
+                .update({'status': 0})
+            # Call flush() to update id value in missing
+            session.flush()
+            session.commit()
+            schema = BeaconSchema(exclude=('resident',))
+            return schema.dump(beacon)
+        except exc.SQLAlchemyError as e:
+            session.rollback()
+            raise ChaliceViewError(str(e))
+
+    # json_body = app.current_request.json_body
+    # beacon_id = json_body['beacon_id']
+    # conn = connect_database()
+    # status = 0
+    # message = ""
+    # with conn.cursor() as cur:
+    #     sql = "SELECT status from beacon where id={}".format(beacon_id)
+    #     cur.execute(sql)
+    #     for row in cur:
+    #         if row[0] == 2:
+    #             status = 1
+    #             message = "Successfully enabled beacon:{}".format(beacon_id)
+    #         elif row[0] == 1:
+    #             status = 2
+    #             message = "Successfully disabled beacon:{}".format(beacon_id)
+    #         else:
+    #             status = 0
+    #     sql = "UPDATE beacon SET status={} WHERE id={}".format(status, beacon_id)
+    #     cur.execute(sql)
+    # conn.commit()
+    # conn.close()
+    # return {"Message": message}
+
+
+@app.route('/v1/user/notification_status', methods=['POST'], authorizer=authorizer)
+def notification_status():
     conn = connect_database()
     json_body = app.current_request.json_body
     user_id = json_body['user_id']
-    message = ""
-    results = []
-
+    status = 0
     with conn.cursor() as cur:
-        sql = "SELECT caregiver.resident_id, resident.fullname, resident.dob, resident.nric, resident.status, resident.created_at, resident.remark, resident.hide_photo, resident.image_path, resident.thumbnail_path FROM caregiver INNER JOIN resident ON caregiver.resident_id=resident.id WHERE caregiver.relative_id={} ORDER BY caregiver.relative_id ASC".format(
-            user_id)
+        sql = "SELECT pinpoint_status FROM user WHERE id={}".format(user_id)
         cur.execute(sql)
         for row in cur:
-            beacons = []
-            locations = []
-            with conn.cursor() as cur2:
-                # Get beacon list
-                sql = "SELECT id, resident_id, uuid, major, minor, status, created_at FROM beacon WHERE resident_id={}".format(
-                    row[0])
-                cur2.execute(sql)
-                for row2 in cur2:
-                    beacons.append(
-                        {"id": row2[0], "resident_id": row2[1], "uuid": row2[2], "major": row2[3], "minor": row2[4],
-                         "status": row2[5], "created_at": str(row2[6])})
-                with conn.cursor() as cur3:
-                    sql = "SELECT id,beacon_id,locator_id,user_id,longitude,latitude,address,created_at FROM location_history WHERE created_at>=ADDDATE(CURRENT_TIMESTAMP,INTERVAL -30 DAY) AND beacon_id={} ORDER BY created_at DESC LIMIT 5".format(
-                        row2[0])
-                    cur3.execute(sql)
-                    for row3 in cur3:
-                        locations.append(
-                            {"id": row3[0], "beacon_id": row3[1], "locator_id": row3[2], "user_id": row3[3],
-                             "longitude": str(row3[4]), "latitude": str(row3[5]), "address": row3[6],
-                             "created_at": str(row3[7])})
-
-            results.append({"id": row[0], "fullname": row[1], "dob": str(row[2]), "nric": row[3], "status": row[4],
-                            "created_at": str(row[5]), "remark": row[6], "hide_photo": row[7], "image_path": row[8],
-                            "thumbnail_path": row[9], "beacons": beacons, "locations": locations})
-    return json.dumps(results)
-    conn.close()
-
-
-@app.route("/v1/resident/missing", methods=['GET'], authorizer=authorizer)
-def index():
-    conn = connect_database()
-    result = []
-    with conn.cursor() as cur:
-        response = cur.execute(
-            "SELECT missing.resident_id, resident.fullname, resident.dob, resident.nric, resident.status, resident.created_at, missing.created_at, missing.remark, resident.hide_photo, resident.image_path, resident.thumbnail_path, MAX(missing.created_at) FROM missing INNER JOIN resident ON missing.resident_id=resident.id GROUP BY missing.resident_id")
-        if response == 0:
-            return {"Success": 0, "Message": "No missing resident"}
-    for row in cur:
-        beacons = []
-        relatives = []
-        locations = []
-        beacon_id = []
-        # Get the beacon list
-        with conn.cursor() as cur2:
-            cur2.execute(
-                "SELECT id,resident_id,uuid,major,minor,status,created_at FROM beacon WHERE resident_id={}".format(
-                    row[0]))
-        for row2 in cur2:
-            beacons.append({"id": row2[0], "resident_id": row2[1], "uuid": row2[2], "major": row2[3], "minor": row2[4],
-                            "status": row2[5], "created_at": str(row2[6])})
-            beacon_id.append(row2[0])
-        # Get relatives list
-        with conn.cursor() as cur2:
-            cur2.execute(
-                "SELECT caregiver.relative_id, user.username, user.email, user.access_token, user.email_confirm_token, user.role, user.phone_number, user.status, user.allowance, user.timestamp FROM caregiver INNER JOIN user ON caregiver.relative_id=user.id WHERE caregiver.resident_id={} ORDER BY caregiver.relative_id ASC".format(
-                    row[0]))
-            for row2 in cur2:
-                relatives.append({"id": row2[0], "username": row2[1], "email": row2[2], "access_token": row2[3],
-                                  "email_confirm_token": row2[4], "role": row2[5], "phone_number": row2[6],
-                                  "status": row2[7], "allowance": row2[8], "timestamp": str(row2[9])})
-                # Get locations list
-        with conn.cursor() as cur2:
-            for beacon in beacon_id:
-                response = cur2.execute(
-                    "SELECT id,beacon_id,locator_id,user_id,longitude,latitude,address,created_at FROM location_history WHERE created_at >= ADDDATE(CURRENT_TIMESTAMP, INTERVAL -30 DAY) AND beacon_id={} ORDER BY created_at DESC LIMIT 5".format(
-                        beacon))
-                for row2 in cur2:
-                    locations.append({"id": row2[0], "beacon_id": row2[1], "locator_id": row2[2], "user_id": row2[3],
-                                      "longitude": str(row2[4]), "latitude": str(row2[5]), "address": row2[6],
-                                      "created_at": str(row2[7])})
-        result.append({"id": row[0], "fullname": row[1], "dob": str(row[2]), "nric": row[3], "status": row[4],
-                       "created_at": str(row[5]), "reported_at": str(row[6]), "remark": row[7], "hide_photo": row[8],
-                       "image_path": row[9], "thumbnail_path": row[10], "beacons": beacons, "relatives": relatives,
-                       "locations": locations})
-
-    conn.close()
-    return json.dumps(result)
+            status = row[0]
+    return {"status": status}
 
 
 @app.route('/v1/pinpoint/register_endpoint', methods=['POST'], authorizer=authorizer)
@@ -244,125 +461,6 @@ def disable_endpoint():
     conn.commit()
     conn.close()
     return {"Message": message, "status": status}
-
-
-@app.route('/v1/resident/report_missing', methods=['POST'], authorizer=authorizer)
-def report_resident():
-    json_body = app.current_request.json_body
-    message = ""
-    conn = connect_database()
-    resident_id = json_body['resident_id']
-    reported_by = json_body['user_id']
-    remark = json_body['remark']
-    status = 0
-    with conn.cursor() as cur:
-        sql_response = cur.execute(
-            "SELECT status FROM missing WHERE resident_id={} AND reported_by={} AND created_at>=CURRENT_DATE".format(
-                resident_id, reported_by))
-        if sql_response == 0:
-            with conn.cursor() as cur:
-                sql = "INSERT INTO missing (resident_id,reported_by,remark) VALUES ({},{},'{}')".format(resident_id,
-                                                                                                        reported_by,
-                                                                                                        remark)
-                cur.execute(sql)
-            with conn.cursor() as cur:
-                sql = "UPDATE resident SET status=1 WHERE id={}".format(resident_id)
-                cur.execute(sql)
-            message = "Successfully report resident {}".format(resident_id)
-        else:
-            for row in cur:
-                if row[0] == 0:
-                    status = 1
-                else:
-                    status = 0
-            with conn.cursor() as cur:
-                sql = "UPDATE missing SET status={},remark='{}' WHERE resident_id={} AND reported_by={} AND created_at>=CURRENT_DATE".format(
-                    status, remark, resident_id, reported_by)
-                cur.execute(sql)
-            with conn.cursor() as cur:
-                sql = "UPDATE resident SET status={},remark='{}' WHERE id={}".format(status, remark, resident_id)
-                cur.execute(sql)
-            message = "Successfully update resident {}".format(resident_id)
-        conn.commit()
-        conn.close()
-        print(message)
-        return {"Message": message}
-
-
-@app.route('/v1/resident/report_found', methods=['POST'], authorizer=authorizer)
-def report_found_resident():
-    json_body = app.current_request.json_body
-    message = ""
-    beacon_id = json_body['beacon_id']
-    user_id = json_body['user_id']
-    longitude = round(float(json_body['longitude']), 8)
-    latitude = round(float(json_body['latitude']), 8)
-    conn = connect_database()
-    with conn.cursor() as cur:
-        sql = "SELECT * FROM location WHERE beacon_id={}".format(beacon_id)
-        sql_response = cur.execute(sql)
-        if sql_response == 0:
-            with conn.cursor() as cur:
-                sql = "INSERT INTO location (beacon_id,user_id,longitude,latitude) VALUES ({},{},{},{})".format(
-                    beacon_id, user_id, longitude, latitude)
-                cur.execute(sql)
-            message = "Successfully insert"
-        else:
-            with conn.cursor() as cur:
-                sql = "UPDATE location SET longitude={},latitude={},user_id={} WHERE beacon_id={}".format(longitude,
-                                                                                                          latitude,
-                                                                                                          user_id,
-                                                                                                          beacon_id)
-                cur.execute(sql)
-            message = "Successfully updated"
-    with conn.cursor() as cur:
-        sql = "INSERT INTO location_history (beacon_id,user_id,longitude,latitude) VALUES ({},{},{},{})".format(
-            beacon_id, user_id, longitude, latitude)
-        cur.execute(sql)
-    conn.commit()
-    conn.close()
-    prepare_message(beacon_id)
-    return {"Message": message}
-
-
-@app.route('/v1/beacon/disable_beacon', methods=['POST'], authorizer=authorizer)
-def disable_beacon():
-    json_body = app.current_request.json_body
-    beacon_id = json_body['beacon_id']
-    conn = connect_database()
-    status = 0
-    message = ""
-    with conn.cursor() as cur:
-        sql = "SELECT status from beacon where id={}".format(beacon_id)
-        cur.execute(sql)
-        for row in cur:
-            if row[0] == 2:
-                status = 1
-                message = "Successfully enabled beacon:{}".format(beacon_id)
-            elif row[0] == 1:
-                status = 2
-                message = "Successfully disabled beacon:{}".format(beacon_id)
-            else:
-                status = 0
-        sql = "UPDATE beacon SET status={} WHERE id={}".format(status, beacon_id)
-        cur.execute(sql)
-    conn.commit()
-    conn.close()
-    return {"Message": message}
-
-
-@app.route('/v1/user/notification_status', methods=['POST'], authorizer=authorizer)
-def notification_status():
-    conn = connect_database()
-    json_body = app.current_request.json_body
-    user_id = json_body['user_id']
-    status = 0
-    with conn.cursor() as cur:
-        sql = "SELECT pinpoint_status FROM user WHERE id={}".format(user_id)
-        cur.execute(sql)
-        for row in cur:
-            status = row[0]
-    return {"status": status}
 
 
 def prepare_message(beacon_id):

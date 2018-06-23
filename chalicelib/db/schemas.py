@@ -2,29 +2,35 @@
 # marshmallow: simplified object serialization  https://marshmallow.readthedocs.io/en/latest/
 # https://marshmallow.readthedocs.io/en/latest/examples.html#quotes-api-flask-sqlalchemy
 ###
-
-from marshmallow import Schema, fields, ValidationError, pre_load
-
+from datetime import datetime
+from marshmallow import Schema, fields, ValidationError, pre_load, post_load
 
 # Custom validator
+from chalicelib.db.models import *
+
+
 def must_not_be_blank(data):
     if not data:
         raise ValidationError('Data not provided.')
 
 
 class GpsSchema(Schema):
-    id = fields.Int(dump_only=True)
+    id = fields.Int()
     latitude = fields.Decimal(required=True)
     longitude = fields.Decimal(required=True)
     address = fields.Str(required=True, validate=must_not_be_blank)
     created_at = fields.DateTime(dump_only=True)
 
+    @post_load
+    def make(self, data):
+        return Gps(**data)
 
-gps_schema = GpsSchema()
+
+# gps_schema = GpsSchema()
 
 
 class LocatorSchema(Schema):
-    id = fields.Int(dump_only=True)
+    id = fields.Int()
     serial = fields.Str(required=True, validate=must_not_be_blank)
     label = fields.Str(required=True, validate=must_not_be_blank)
     remark = fields.Str()
@@ -34,14 +40,19 @@ class LocatorSchema(Schema):
     created_at = fields.DateTime(dump_only=True)
     updated_at = fields.DateTime(dump_only=True)
 
+    @post_load
+    def make(self, data):
+        return Locator(**data)
 
-locator_schema = LocatorSchema()
-locators_schema = LocatorSchema(many=True)
+
+# locator_schema = LocatorSchema()
+# locators_schema = LocatorSchema(many=True)
 
 
 class ResidentSchema(Schema):
-    id = fields.Int(dump_only=True)
+    id = fields.Int()
     fullname = fields.Str(required=True, validate=must_not_be_blank)
+    gender = fields.Int(missing=1)
     dob = fields.Date(required=True)
     nric = fields.Str()
     image_path = fields.Str()
@@ -52,13 +63,18 @@ class ResidentSchema(Schema):
     created_at = fields.DateTime(dump_only=True)
     updated_at = fields.DateTime(dump_only=True)
 
+    beacons = fields.Nested('BeaconSchema', many=True, dump_only=True, exclude=('resident',))
+    missings = fields.Nested('MissingSchema', many=True, dump_only=True, exclude=('resident',))
+    missing_active = fields.Nested('MissingSchema', dump_only=True, exclude=('resident',))
+    caregivers = fields.Nested('UserSchema', many=True, dump_only=True, only=('id', 'username', 'user_profile',))
 
-resident_schema = ResidentSchema()
-residents_schema = ResidentSchema(many=True, only=('id', 'content'))
+    @post_load
+    def make(self, data):
+        return Resident(**data)
 
 
 class UserSchema(Schema):
-    id = fields.Int(dump_only=True)
+    id = fields.Int()
     username = fields.Str()
     email = fields.Str()
     endpointID = fields.Str()
@@ -73,19 +89,24 @@ class UserSchema(Schema):
     status = fields.Int(missing=10)
     allowance = fields.Int()
     timestamp = fields.Int()
-    last_login = fields.DateTime()
     created_at = fields.DateTime(dump_only=True)
     updated_at = fields.DateTime(dump_only=True)
 
+    user_profile = fields.Nested('UserProfileSchema', dump_only=True, exclude=('user',))
+    user_tokens = fields.Nested('UserTokenSchema', many=True, dump_only=True, exclude=('user',))
 
-user_schema = UserSchema()
-user_public_schema = UserSchema(only=('id', 'username', 'email', 'phone_number', 'role', 'status', 'last_login'))
-users_public_schema = UserSchema(many=True,
-                                 only=('id', 'username', 'email', 'phone_number', 'role', 'status', 'last_login'))
+    @post_load
+    def make(self, data):
+        return User(**data)
+
+
+# user_schema = UserSchema(exclude=('password_hash','access_token'))
+# user_public_schema = UserSchema(only=('id', 'username', 'email', 'phone_number', 'role', 'status'))
+# users_public_schema = UserSchema(many=True, only=('id', 'username', 'email', 'phone_number', 'role', 'status'))
 
 
 class BeaconSchema(Schema):
-    id = fields.Int(dump_only=True)
+    id = fields.Int()
     uuid = fields.Str(required=True, validate=must_not_be_blank)
     major = fields.Int(required=True)
     minor = fields.Int(required=True)
@@ -93,15 +114,20 @@ class BeaconSchema(Schema):
     resident_id = fields.Int()
     created_at = fields.DateTime(dump_only=True)
     updated_at = fields.DateTime(dump_only=True)
-    resident = fields.Nested(ResidentSchema, dump_only=True)
+
+    resident = fields.Nested(ResidentSchema, exclude=('beacons',), dump_only=True)
+
+    @post_load
+    def make(self, data):
+        return Beacon(**data)
 
 
-beacon_schema = BeaconSchema()
-beacons_schema = BeaconSchema(many=True)
+# beacon_schema = BeaconSchema()
+# beacons_schema = BeaconSchema(many=True, exclude=('resident',))
 
 
-class RelativeSchema(Schema):
-    id = fields.Int(dump_only=True)
+class UserProfileSchema(Schema):
+    id = fields.Int()
     fullname = fields.Str(required=True, validate=must_not_be_blank)
     nric = fields.Str()
     phone = fields.Str()
@@ -109,62 +135,114 @@ class RelativeSchema(Schema):
     user_id = fields.Int()
     created_at = fields.DateTime(dump_only=True)
     updated_at = fields.DateTime(dump_only=True)
+
     user = fields.Nested(UserSchema, dump_only=True)
 
+    @post_load
+    def make(self, data):
+        return UserProfile(**data)
 
-relative_schema = RelativeSchema()
-relatives_schema = RelativeSchema(many=True)
+
+# user_profile_schema = UserProfileSchema()
+# user_profiles_schema = UserProfileSchema(exclude=('user',), many=True)
 
 
 class CaregiverSchema(Schema):
-    id = fields.Int(dump_only=True)
+    id = fields.Int()
     relative_id = fields.Int(required=True)
     resident_id = fields.Int(required=True)
     relation = fields.Str(required=True, validate=must_not_be_blank)
     created_at = fields.DateTime(dump_only=True)
     updated_at = fields.DateTime(dump_only=True)
-    relative = fields.Nested(RelativeSchema, dump_only=True)
+
+    relative = fields.Nested(UserProfileSchema, dump_only=True)
     resident = fields.Nested(ResidentSchema, dump_only=True)
 
+    @post_load
+    def make(self, data):
+        return Caregiver(**data)
 
-caregiver_schema = CaregiverSchema()
-caregivers_schema = CaregiverSchema(many=True)
+
+# caregiver_schema = CaregiverSchema()
+# caregivers_schema = CaregiverSchema(many=True)
 
 
 class MissingSchema(Schema):
-    id = fields.Int(dump_only=True)
+    id = fields.Int()
     resident_id = fields.Int(required=True)
-    reported_at = fields.DateTime(missing="'0000-00-00 00:00:00'", required=True)
-    remark = fields.Str()
-    closed_at = fields.Date(missing="'0000-00-00'")
+    reported_by = fields.Int(required=True)
+    reported_at = fields.DateTime(missing="'1000-01-01 00:00:00'", required=True)
+    remark = fields.Str(required=True)
+    closed_by = fields.Int()
+    closed_at = fields.Date()
     closure = fields.Str()
     status = fields.Int(missing=1)
     created_at = fields.DateTime(dump_only=True)
     updated_at = fields.DateTime(dump_only=True)
-    resident = fields.Nested(ResidentSchema, dump_only=True)
+
+    resident = fields.Nested(ResidentSchema, exclude=('missings',), dump_only=True)
+
+    @pre_load
+    def pre(self, data):
+        if not data.get('reported_at', None):
+            data['reported_at'] = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+        return data
+
+    @post_load
+    def make(self, data):
+        return Missing(**data)
 
 
-missing_schema = MissingSchema()
-missings_schema = MissingSchema(many=True)
+# missing_schema = MissingSchema()
+# missings_schema = MissingSchema(many=True)
+
+
+class MissingClosingSchema(Schema):
+    id = fields.Int()
+    resident_id = fields.Int(required=True)
+    reported_by = fields.Int()
+    reported_at = fields.DateTime()
+    remark = fields.Str()
+    closed_by = fields.Int(required=True)
+    closed_at = fields.Date()
+    closure = fields.Str(required=True)
+    status = fields.Int()
+    created_at = fields.DateTime(dump_only=True)
+    updated_at = fields.DateTime(dump_only=True)
+
+    @pre_load
+    def pre(self, data):
+        if not data.get('closed_at', None):
+            data['closed_at'] = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+        return data
+
+    @post_load
+    def make(self, data):
+        return Missing(**data)
 
 
 class UserTokenSchema(Schema):
-    id = fields.Int(dump_only=True)
+    id = fields.Int()
     user_id = fields.Int(required=True)
     token = fields.Str(required=True, validate=must_not_be_blank)
     label = fields.Str()
     mac_address = fields.Str()
-    expire = fields.DateTime(missing="'0000-00-00 00:00:00'")
+    expire = fields.DateTime()
     created_at = fields.DateTime(dump_only=True)
+
     user = fields.Nested(UserSchema, dump_only=True)
 
+    @post_load
+    def make(self, data):
+        return UserToken(**data)
 
-userToken_schema = UserTokenSchema()
-userTokens_schema = UserTokenSchema(many=True)
+
+# userToken_schema = UserTokenSchema()
+# userTokens_schema = UserTokenSchema(exclude=('user',), many=True)
 
 
 class LocationSchema(Schema):
-    id = fields.Int(dump_only=True)
+    id = fields.Int()
     beacon_id = fields.Int(required=True)
     latitude = fields.Decimal(required=True)
     longitude = fields.Decimal(required=True)
@@ -181,13 +259,17 @@ class LocationSchema(Schema):
     resident = fields.Nested(ResidentSchema, dump_only=True)
     user = fields.Nested(UserSchema, dump_only=True)
 
+    @post_load
+    def make(self, data):
+        return Location(**data)
 
-location_schema = LocationSchema()
-locations_schema = LocationSchema(many=True)
+
+# location_schema = LocationSchema()
+# locations_schema = LocationSchema(many=True)
 
 
 class LocationHistorySchema(Schema):
-    id = fields.Int(dump_only=True)
+    id = fields.Int()
     beacon_id = fields.Int(required=True)
     latitude = fields.Decimal(required=True)
     longitude = fields.Decimal(required=True)
@@ -204,6 +286,9 @@ class LocationHistorySchema(Schema):
     resident = fields.Nested(ResidentSchema, dump_only=True)
     user = fields.Nested(UserSchema, dump_only=True)
 
+    @post_load
+    def make(self, data):
+        return LocationHistory(**data)
 
-locationHistory_schema = LocationHistorySchema()
-locationHistories_schema = LocationHistorySchema(many=True)
+# locationHistory_schema = LocationHistorySchema()
+# locationHistories_schema = LocationHistorySchema(many=True)
