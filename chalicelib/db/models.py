@@ -61,8 +61,8 @@ class Resident(Base):
     beacons = relationship(u'Beacon', back_populates="resident")
     missings = relationship(u'Missing', back_populates="resident")
     missing_active = relationship(u'Missing', uselist=False,
-                                   primaryjoin="and_(Resident.id==Missing.resident_id, Missing.status==1)",
-                                   back_populates="resident")
+                                  primaryjoin="and_(Resident.id==Missing.resident_id, Missing.status==1)",
+                                  back_populates="resident")
 
 
 class User(Base):
@@ -105,6 +105,7 @@ class Beacon(Base):
     )
 
     id = Column(Integer, primary_key=True)
+    label = Column(String(20))
     uuid = Column(String(40), nullable=False)
     major = Column(Integer, nullable=False)
     minor = Column(Integer, nullable=False)
@@ -145,6 +146,9 @@ class Missing(Base):
     reported_by = Column(ForeignKey(u'user.id', onupdate=u'CASCADE'), nullable=True, index=True)
     reported_at = Column(DateTime, nullable=False, server_default=text("'1000-01-01 00:00:00'"))
     remark = Column(String(500))
+    latitude = Column(DECIMAL(10, 8))
+    longitude = Column(DECIMAL(11, 8))
+    address = Column(String(200))
     closed_by = Column(ForeignKey(u'user.id', onupdate=u'CASCADE'), nullable=True, index=True)
     closed_at = Column(Date, server_default=text("'1000-01-01'"))
     closure = Column(String(500))
@@ -152,10 +156,8 @@ class Missing(Base):
     created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
     updated_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"))
 
-    resident = relationship(u'Resident', back_populates="missings")
-
-    # latest_location = relationship(u'Location', back_populates="missing")
-    # location_history = relationship(u'LocationHistory', back_populates="missing")
+    resident = relationship(u'Resident', uselist=False, back_populates="missings")
+    locations = relationship(u'Location', back_populates="missing")
 
 
 class UserProfile(Base):
@@ -191,27 +193,6 @@ class Location(Base):
     __tablename__ = 'location'
 
     id = Column(Integer, primary_key=True)
-    beacon_id = Column(ForeignKey(u'beacon.id', ondelete=u'CASCADE', onupdate=u'CASCADE'), nullable=False, unique=True)
-    latitude = Column(DECIMAL(10, 8), nullable=False)
-    longitude = Column(DECIMAL(11, 8), nullable=False)
-    address = Column(String(200))
-    resident_id = Column(ForeignKey(u'resident.id', ondelete=u'CASCADE', onupdate=u'CASCADE'), index=True)
-    missing_id = Column(ForeignKey(u'missing.id', ondelete=u'CASCADE', onupdate=u'CASCADE'), index=True)
-    locator_id = Column(ForeignKey(u'locator.id', ondelete=u'CASCADE', onupdate=u'CASCADE'), index=True)
-    user_id = Column(ForeignKey(u'user.id', ondelete=u'CASCADE', onupdate=u'CASCADE'), index=True)
-    created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"))
-
-    # beacon = relationship(u'Beacon')
-    # locator = relationship(u'Locator')
-    # missing = relationship(u'Missing', back_populates='latest_location')
-    # resident = relationship(u'Resident')
-    # user = relationship(u'User')
-
-
-class LocationHistory(Base):
-    __tablename__ = 'location_history'
-
-    id = Column(Integer, primary_key=True)
     beacon_id = Column(ForeignKey(u'beacon.id', ondelete=u'CASCADE', onupdate=u'CASCADE'), nullable=False, index=True)
     latitude = Column(DECIMAL(10, 8), nullable=False)
     longitude = Column(DECIMAL(11, 8), nullable=False)
@@ -222,8 +203,8 @@ class LocationHistory(Base):
     user_id = Column(ForeignKey(u'user.id', ondelete=u'CASCADE', onupdate=u'CASCADE'), index=True)
     created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"))
 
-    # beacon = relationship(u'Beacon')
-    # locator = relationship(u'Locator')
-    # missing = relationship(u'Missing', back_populates='location_history')
-    # resident = relationship(u'Resident')
-    # user = relationship(u'User')
+    missing = relationship(u'Missing', uselist=False, back_populates='locations')
+    resident = relationship(u'Resident', uselist=False)
+    beacon = relationship(u'Beacon', uselist=False)
+    # user = relationship(u'User', uselist=False)
+    # locator = relationship(u'Locator', uselist=False)

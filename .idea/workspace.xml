@@ -2,12 +2,12 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="598f9536-1b55-4fbb-9286-b14cfc6b889b" name="Default" comment="">
-      <change afterPath="$PROJECT_DIR$/chalicelib/utils.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/TODO.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/chalicelib/db/elderly_track.sql" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/chalicelib/db/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/chalicelib/db/models.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/chalicelib/db/schemas.py" beforeDir="false" afterPath="$PROJECT_DIR$/chalicelib/db/schemas.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/doc/elderly_track.sql" beforeDir="false" afterPath="$PROJECT_DIR$/doc/elderly_track.sql" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -60,8 +60,8 @@
       <file leaf-file-name="app.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/app.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="370">
-              <caret line="358" column="30" lean-forward="true" selection-start-line="358" selection-start-column="30" selection-end-line="358" selection-end-column="30" />
+            <state relative-caret-position="376">
+              <caret line="450" column="43" selection-start-line="450" selection-start-column="43" selection-end-line="450" selection-end-column="43" />
               <folding>
                 <element signature="e#0#11#0" expanded="true" />
               </folding>
@@ -69,14 +69,44 @@
           </provider>
         </entry>
       </file>
+      <file leaf-file-name="service.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/chalicelib/db/service.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="60">
+              <caret line="4" selection-start-line="4" selection-end-line="4" />
+              <folding>
+                <element signature="e#0#33#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="TODO.txt" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/TODO.txt">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="120">
+              <caret line="8" selection-start-line="8" selection-end-line="8" />
+            </state>
+          </provider>
+        </entry>
+      </file>
       <file leaf-file-name="schemas.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/chalicelib/db/schemas.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="371">
-              <caret line="116" lean-forward="true" selection-start-line="116" selection-end-line="116" />
+            <state relative-caret-position="385">
+              <caret line="274" column="26" selection-start-line="274" selection-start-column="6" selection-end-line="274" selection-end-column="26" />
               <folding>
                 <element signature="e#201#230#0" expanded="true" />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="elderly_track.sql" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/chalicelib/db/elderly_track.sql">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="315">
+              <caret line="21" column="28" selection-start-line="21" selection-start-column="28" selection-end-line="21" selection-end-column="28" />
             </state>
           </provider>
         </entry>
@@ -93,8 +123,8 @@
       <file leaf-file-name="models.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/chalicelib/db/models.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-345">
-              <caret line="101" column="28" selection-start-line="101" selection-start-column="28" selection-end-line="101" selection-end-column="28" />
+            <state relative-caret-position="371">
+              <caret line="110" column="9" selection-start-line="110" selection-start-column="9" selection-end-line="110" selection-end-column="9" />
               <folding>
                 <element signature="e#16#38#0" expanded="true" />
               </folding>
@@ -113,21 +143,11 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>resident_active</find>
-      <find>content</find>
-      <find>residents_schema</find>
-      <find>beacons</find>
-      <find>only</find>
-      <find>User</find>
-      <find>profile</find>
-      <find>resident_sche</find>
-      <find>UserToken</find>
       <find>UserProfile</find>
       <find>user_profile</find>
       <find>missings_schema</find>
       <find>/beacon</find>
       <find>/beacon/</find>
-      <find>filter</find>
       <find>last_login</find>
       <find>care_givers</find>
       <find>care_receivers</find>
@@ -141,8 +161,18 @@
       <find>active</find>
       <find>utc</find>
       <find>missing_schema</find>
+      <find>LocationHistory</find>
+      <find>filter</find>
+      <find>lo</find>
+      <find>join</find>
+      <find>latest</find>
+      <find>Missing</find>
+      <find>location</find>
+      <find>history</find>
       <find>missing</find>
       <find>BeaconSchema</find>
+      <find>Beacon</find>
+      <find>BeaconSche</find>
     </findStrings>
     <replaceStrings>
       <replace>SMALLINT</replace>
@@ -179,6 +209,7 @@
         <option value="$PROJECT_DIR$/chalicelib/db/__init__.py" />
         <option value="$PROJECT_DIR$/.gitignore" />
         <option value="$PROJECT_DIR$/chalicelib/utils.py" />
+        <option value="$PROJECT_DIR$/TODO.txt" />
         <option value="$PROJECT_DIR$/chalicelib/db/models.py" />
         <option value="$PROJECT_DIR$/chalicelib/db/schemas.py" />
         <option value="$PROJECT_DIR$/app.py" />
@@ -267,9 +298,9 @@
       <recent name="$PROJECT_DIR$/chalicelib/db" />
     </key>
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/chalicelib/db" />
       <recent name="$PROJECT_DIR$/doc" />
       <recent name="$PROJECT_DIR$/chalicelib" />
-      <recent name="$PROJECT_DIR$/chalicelib/db" />
     </key>
   </component>
   <component name="RunDashboard">
@@ -343,6 +374,11 @@
   </component>
   <component name="VcsContentAnnotationSettings">
     <option name="myLimit" value="2678400000" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <option name="time" value="1" />
+    </breakpoint-manager>
   </component>
   <component name="editorHistoryManager">
     <entry file="file://$PROJECT_DIR$/.gitignore">
@@ -644,20 +680,37 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/chalicelib/utils.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="135">
+          <caret line="9" selection-start-line="9" selection-end-line="9" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/chalicelib/db/models.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-345">
-          <caret line="101" column="28" selection-start-line="101" selection-start-column="28" selection-end-line="101" selection-end-column="28" />
+        <state relative-caret-position="371">
+          <caret line="110" column="9" selection-start-line="110" selection-start-column="9" selection-end-line="110" selection-end-column="9" />
           <folding>
             <element signature="e#16#38#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/chalicelib/utils.py">
+    <entry file="file://$PROJECT_DIR$/chalicelib/db/elderly_track.sql">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="135">
-          <caret line="9" selection-start-line="9" selection-end-line="9" />
+        <state relative-caret-position="315">
+          <caret line="21" column="28" selection-start-line="21" selection-start-column="28" selection-end-line="21" selection-end-column="28" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/chalicelib/db/schemas.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="385">
+          <caret line="274" column="26" selection-start-line="274" selection-start-column="6" selection-end-line="274" selection-end-column="26" />
+          <folding>
+            <element signature="e#201#230#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -671,20 +724,17 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/chalicelib/db/schemas.py">
+    <entry file="file://$PROJECT_DIR$/TODO.txt">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="371">
-          <caret line="116" lean-forward="true" selection-start-line="116" selection-end-line="116" />
-          <folding>
-            <element signature="e#201#230#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="120">
+          <caret line="8" selection-start-line="8" selection-end-line="8" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/app.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="370">
-          <caret line="358" column="30" lean-forward="true" selection-start-line="358" selection-start-column="30" selection-end-line="358" selection-end-column="30" />
+        <state relative-caret-position="376">
+          <caret line="450" column="43" selection-start-line="450" selection-start-column="43" selection-end-line="450" selection-end-column="43" />
           <folding>
             <element signature="e#0#11#0" expanded="true" />
           </folding>

@@ -1,0 +1,8 @@
+
+Login through email and return token
+
+Scheduled hourly lambda to expire missing case
+Lambda to send email
+Lambda to send sms
+
+Use token for authentication on some API

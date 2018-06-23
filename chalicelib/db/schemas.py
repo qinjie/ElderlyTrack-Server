@@ -110,6 +110,7 @@ class BeaconSchema(Schema):
     uuid = fields.Str(required=True, validate=must_not_be_blank)
     major = fields.Int(required=True)
     minor = fields.Int(required=True)
+    label = fields.Str()
     status = fields.Int(missing=1)
     resident_id = fields.Int()
     created_at = fields.DateTime(dump_only=True)
@@ -173,6 +174,9 @@ class MissingSchema(Schema):
     reported_by = fields.Int(required=True)
     reported_at = fields.DateTime(missing="'1000-01-01 00:00:00'", required=True)
     remark = fields.Str(required=True)
+    latitude = fields.Decimal()
+    longitude = fields.Decimal()
+    address = fields.Str()
     closed_by = fields.Int()
     closed_at = fields.Date()
     closure = fields.Str()
@@ -253,24 +257,27 @@ class LocationSchema(Schema):
     user_id = fields.Int()
     created_at = fields.DateTime(dump_only=True)
 
-    beacon = fields.Nested(BeaconSchema, dump_only=True)
+    beacon = fields.Nested(BeaconSchema, exclude=('resident',), dump_only=True)
+    missing = fields.Nested(MissingSchema, exclude=('resident',), dump_only=True)
+    resident = fields.Nested(ResidentSchema, exclude=('beacons', 'missings', 'missing_active', 'caregivers'),
+                             dump_only=True)
     locator = fields.Nested(LocatorSchema, dump_only=True)
-    missing = fields.Nested(MissingSchema, dump_only=True)
-    resident = fields.Nested(ResidentSchema, dump_only=True)
     user = fields.Nested(UserSchema, dump_only=True)
 
     @post_load
-    def make(self, data):
+    def postload(self, data):
         return Location(**data)
 
 
 # location_schema = LocationSchema()
 # locations_schema = LocationSchema(many=True)
 
-
-class LocationHistorySchema(Schema):
+class LocationBeaconSchema(Schema):
     id = fields.Int()
-    beacon_id = fields.Int(required=True)
+    beacon_id = fields.Int()
+    uuid = fields.Str(required=True)
+    minor = fields.Int(required=True)
+    major = fields.Int(required=True)
     latitude = fields.Decimal(required=True)
     longitude = fields.Decimal(required=True)
     address = fields.Str()
@@ -279,16 +286,3 @@ class LocationHistorySchema(Schema):
     locator_id = fields.Int()
     user_id = fields.Int()
     created_at = fields.DateTime(dump_only=True)
-
-    beacon = fields.Nested(BeaconSchema, dump_only=True)
-    locator = fields.Nested(LocatorSchema, dump_only=True)
-    missing = fields.Nested(MissingSchema, dump_only=True)
-    resident = fields.Nested(ResidentSchema, dump_only=True)
-    user = fields.Nested(UserSchema, dump_only=True)
-
-    @post_load
-    def make(self, data):
-        return LocationHistory(**data)
-
-# locationHistory_schema = LocationHistorySchema()
-# locationHistories_schema = LocationHistorySchema(many=True)
