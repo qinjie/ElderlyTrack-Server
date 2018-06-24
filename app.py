@@ -4,24 +4,23 @@ import os
 
 import pymysql
 import boto3
-from chalice import Chalice, NotFoundError, ChaliceViewError, CognitoUserPoolAuthorizer, ConflictError, Rate
+from chalice import Chalice, NotFoundError, ChaliceViewError, CognitoUserPoolAuthorizer, ConflictError, Rate, \
+    UnauthorizedError, AuthResponse
 from chalice import IAMAuthorizer
 from chalice import BadRequestError
 from sqlalchemy import exc
 
+from chalicelib import constants
+from chalicelib.auth import encode_password, verify_password, get_jwt_token, decode_jwt_token, gen_jwt_token, \
+    get_authorized_user
 from chalicelib.db.base import session_factory
 from chalicelib.db.models import *
 from chalicelib.db.schemas import *
 import contextlib
 
-## Used in clients
-# lam = boto3.client('lambda',
-#                    aws_access_key_id='AKIAIVUZMXV4RPNA6TXQ',
-#                    aws_secret_access_key='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',
-#                    region_name='ap-southeast-1'
-#                    )
 from chalicelib.helper import notify_expired_missing, notify_found_missing, notify_new_missing
-from chalicelib.utils import SetEncoder
+from chalicelib.utils import SetEncoder, DatetimeEncoder
+from chalicelib.constants import JWT_SECRET
 
 db_host = "iot-centre-rds.crqhd2o1amcg.ap-southeast-1.rds.amazonaws.com"
 db_name = "elderly_track"
@@ -37,44 +36,80 @@ pinpoint_client = boto3.client(
 
 app = Chalice(app_name="elderly_track")
 
+
+# JWT Token Authorizer
+@app.authorizer()
+def authorizer(auth_request):
+    token = auth_request.token
+    decoded = decode_jwt_token(token, JWT_SECRET)
+    # Here login_info = email + "|" + role
+    return AuthResponse(routes=['*'], principal_id=decoded['sub'])
+
+
 # Debug mode
 app.debug = True
-authorizer = None  # Set to None to disable authorization
 
 
-@app.route('/v1/user/login_with_email', methods=['POST'], authorizer=authorizer)
-def login():
+# authorizer = None  # Set to None to disable authorization
+
+
+@app.route('/v1/user/register_with_email', methods=['POST'], authorizer=None)
+def register():
     json_body = app.current_request.json_body
     email = json_body['email']
-    if not email:
-        raise BadRequestError("Email must be supplied.")
+    password = json_body['password']
+    if not (email or password):
+        raise BadRequestError("Email and password must be supplied.")
+
+    result = encode_password(password)
+    hashed_password = result['hashed']
+    salt_used = result['salt']
+    json_body.pop('password', None)
+    schema = UserSchema()
+    user, errors = schema.load(json_body)
+    user.password_hash = hashed_password
+    user.password_salt = salt_used
 
     with contextlib.closing(session_factory()) as session:
-        user = session.query(User).filter(User.email == email).first()
-        if not user:
-            raise NotFoundError("Email not found")
-        else:
-            user_schema = UserSchema(exclude=('password_hash', 'access_token'))
+        try:
+            session.add(user)
+            session.commit()
+            user_schema = UserSchema(exclude=('password_hash', 'salt', 'access_token'))
             result = user_schema.dump(user)
             if result.errors:  # errors not empty
                 raise ChaliceViewError(result.errors)
             return result.data
+        except exc.SQLAlchemyError as e:
+            session.rollback()
+            raise ChaliceViewError(str(e))
 
 
-@app.route('/v1/user/login_anonymous', methods=['GET'], authorizer=authorizer)
-def anonymousLogin():
-    conn = connect_database()
+@app.route('/v1/user/login_with_email', methods=['POST'], authorizer=None)
+def login():
+    json_body = app.current_request.json_body
+    email = json_body['email']
+    password = json_body['password']
+    if not (email or password):
+        raise BadRequestError("Email and password must be supplied.")
 
-    with conn.cursor() as cur:
-        sql = "SELECT MAX(id) FROM user"
-        cur.execute(sql)
-        for row in cur:
-            user_id = row[0] + 1
-        sql = "INSERT INTO user (id,username,role,status) VALUES ({},'anonymous',5,10)".format(user_id)
-        cur.execute(sql)
-    conn.commit()
-    conn.close()
-    return json.dumps({"user_id": user_id, "username": "anonymous", "role": 5, "status": 10})
+    with contextlib.closing(session_factory()) as session:
+        user = session.query(User).filter(User.email == email).first()
+        if not user:
+            raise NotFoundError("User not found")
+
+        # Add to token ==> email + "|" + role
+        jwt_token = get_jwt_token(user.email + "," + str(user.role), password, user.password_salt, user.password_hash,
+                                  JWT_SECRET)
+        return json.dumps({"token": jwt_token}, cls=DatetimeEncoder)
+
+
+@app.route('/v1/user/login_anonymous', methods=['GET'], authorizer=None)
+def login_anonymous():
+    data = ',' + str(constants.USER_ROLE_ANONYMOUS)
+    print(data)
+    jwt_token = gen_jwt_token(data, JWT_SECRET)
+    print(jwt_token)
+    return json.dumps({"token": jwt_token}, cls=DatetimeEncoder)
 
 
 @app.route("/v1/missing", methods=['GET'], authorizer=authorizer)
@@ -460,7 +495,8 @@ def expire_missing_case(event):
 
 @app.route('/v1/test', methods=['GET'], authorizer=authorizer)
 def hello():
-    return {'hello': 'world'}
+    result = get_authorized_user(app.current_request)
+    return result
 
 
 @app.route('/v1/user/notification_status', methods=['POST'], authorizer=authorizer)

@@ -2,8 +2,6 @@
 # Deployment
 
 chalice deploy --stage dev --profile qinjie
-chalice deploy --stage proc --profile qinjie
-
 
 
 # AWS Resources
