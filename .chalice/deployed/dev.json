@@ -7,6 +7,16 @@
       "role_name": "elderly_track-dev"
     },
     {
+      "name": "expire_missing_case",
+      "resource_type": "lambda_function",
+      "lambda_arn": "arn:aws:lambda:ap-southeast-1:498107424281:function:elderly_track-dev-expire_missing_case"
+    },
+    {
+      "name": "expire_missing_case-event",
+      "resource_type": "cloudwatch_event",
+      "rule_name": "elderly_track-dev-expire_missing_case-event"
+    },
+    {
       "name": "api_handler",
       "resource_type": "lambda_function",
       "lambda_arn": "arn:aws:lambda:ap-southeast-1:498107424281:function:elderly_track-dev"

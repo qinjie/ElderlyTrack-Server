@@ -332,7 +332,7 @@ def enable_beacon_by_id(id):
 def disable_beacon_by_id(id):
     with contextlib.closing(session_factory()) as session:
         try:
-            beacon = session.query(Beacon).get(id).first()
+            beacon = session.query(Beacon).get(id)
             count = session.query(Beacon).filter(Beacon.id == id, Beacon.status == 1).update({'status': 0})
             # Call flush() to update id value in missing
             session.flush()
