@@ -18,7 +18,7 @@ from chalicelib.db.models import *
 from chalicelib.db.schemas import *
 import contextlib
 
-from chalicelib.helper import notify_expired_missing, notify_found_missing, notify_new_missing
+from chalicelib.helper import notify_expired_missing, notify_found_missing, notify_new_missing, send_verification_email
 from chalicelib.utils import SetEncoder, DatetimeEncoder
 from chalicelib.auth import JWT_SECRET
 
@@ -74,6 +74,7 @@ def register():
             session.commit()
             user_schema = UserSchema(exclude=('password_hash', 'salt', 'access_token'))
             result = user_schema.dump(user)
+            send_verification_email(email)
             if result.errors:  # errors not empty
                 raise ChaliceViewError(result.errors)
             return result.data
