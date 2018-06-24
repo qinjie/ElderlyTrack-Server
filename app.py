@@ -20,7 +20,7 @@ import contextlib
 
 from chalicelib.helper import notify_expired_missing, notify_found_missing, notify_new_missing
 from chalicelib.utils import SetEncoder, DatetimeEncoder
-from chalicelib.constants import JWT_SECRET
+from chalicelib.auth import JWT_SECRET
 
 db_host = "iot-centre-rds.crqhd2o1amcg.ap-southeast-1.rds.amazonaws.com"
 db_name = "elderly_track"
@@ -47,10 +47,8 @@ def authorizer(auth_request):
 
 
 # Debug mode
+# authorizer = None             # Set to None to disable authorization
 app.debug = True
-
-
-# authorizer = None  # Set to None to disable authorization
 
 
 @app.route('/v1/user/register_with_email', methods=['POST'], authorizer=None)

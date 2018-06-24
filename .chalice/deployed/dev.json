@@ -22,6 +22,11 @@
       "lambda_arn": "arn:aws:lambda:ap-southeast-1:498107424281:function:elderly_track-dev"
     },
     {
+      "name": "authorizer",
+      "resource_type": "lambda_function",
+      "lambda_arn": "arn:aws:lambda:ap-southeast-1:498107424281:function:elderly_track-dev-authorizer"
+    },
+    {
       "name": "rest_api",
       "resource_type": "rest_api",
       "rest_api_id": "x2qiqap347",

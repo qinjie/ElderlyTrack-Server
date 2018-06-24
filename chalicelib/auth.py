@@ -8,6 +8,8 @@ import os
 import jwt
 from chalice import UnauthorizedError
 
+JWT_SECRET = b'\xf7\xb6k\xabP\xce\xc1\xaf\xad\x86\xcf\x84\x02\x80\xa0\xe0'
+
 
 def get_jwt_token(data, password, salt, hashed_password, jwt_secret):
     if verify_password(password, salt, hashed_password):
@@ -30,10 +32,11 @@ def gen_jwt_token(data, jwt_secret):
 
 
 def get_authorized_user(current_request):
-    data = current_request.context['authorizer']['principalId'].split('|')
+    data = current_request.context['authorizer']['principalId'].split(',')
+    data = (data + 2 * [''])[:2]
     email = data[0]
     role = data[1]
-    return email, role
+    return {"email": email, "role": role}
 
 
 def decode_jwt_token(token, jwt_secret):
