@@ -26,31 +26,30 @@ def send_emails(emails, content):
   from_address = config.EMAIL_ADMIN
   subject = content['subject']
   message = content['message']
-  for email in emails:
-      try:
-        ses_client.send_email(
-          Source=from_address,
-          Destination={
-            'ToAddresses': email,
-          },
-          Message={
-            'Subject': {
-              'Data': subject,
-              'Charset': 'utf8'
-            },
-            'Body': {
-              'Text': {
-                'Data': message,
-                'Charset': 'utf8'
-              }
-            }
-          },
-          ReplyToAddress=[
-            from_address
-          ]
-        )
-      except Exception as e:
-        print e.message
+  try:
+    ses_client.send_email(
+      Source=from_address,
+      Destination={
+        'ToAddresses': emails,
+      },
+      Message={
+        'Subject': {
+          'Data': subject,
+          'Charset': 'utf8'
+        },
+        'Body': {
+          'Text': {
+            'Data': message,
+            'Charset': 'utf8'
+          }
+        }
+      },
+      ReplyToAddresses=[
+        from_address
+      ]
+    )
+  except Exception as e:
+    print e.message
 
 
 def send_sms(phoneNumbers, content):
