@@ -1,10 +1,10 @@
 import json
-import datetime
+from datetime import datetime, timedelta
 import os
 
 import pymysql
 import boto3
-from chalice import Chalice, NotFoundError, ChaliceViewError, CognitoUserPoolAuthorizer, ConflictError
+from chalice import Chalice, NotFoundError, ChaliceViewError, CognitoUserPoolAuthorizer, ConflictError, Rate
 from chalice import IAMAuthorizer
 from chalice import BadRequestError
 from sqlalchemy import exc
@@ -20,6 +20,7 @@ import contextlib
 #                    aws_secret_access_key='9FLoyVKgPGSiUj0jKl4B8WMrxAXeiH+/SS8Tw+CZ',
 #                    region_name='ap-southeast-1'
 #                    )
+from chalicelib.helper import notify_expired_missing, notify_found_missing, notify_new_missing
 from chalicelib.utils import SetEncoder
 
 db_host = "iot-centre-rds.crqhd2o1amcg.ap-southeast-1.rds.amazonaws.com"
@@ -39,11 +40,6 @@ app = Chalice(app_name="elderly_track")
 # Debug mode
 app.debug = True
 authorizer = None  # Set to None to disable authorization
-
-
-@app.route('/v1/test', methods=['GET'], authorizer=authorizer)
-def hello():
-    return {'hello': 'world'}
 
 
 @app.route('/v1/user/login_with_email', methods=['POST'], authorizer=authorizer)
@@ -82,7 +78,7 @@ def anonymousLogin():
 
 
 @app.route("/v1/missing", methods=['GET'], authorizer=authorizer)
-def missing_all():
+def list_all_missing_cases():
     with contextlib.closing(session_factory()) as session:
         missings = session.query(Missing).all()
         if not missings:
@@ -96,7 +92,7 @@ def missing_all():
 
 
 @app.route("/v1/missing/active", methods=['GET'], authorizer=authorizer)
-def missing_active():
+def list_active_missing_cases():
     with contextlib.closing(session_factory()) as session:
         missings = session.query(Missing).filter(Missing.status == 1).all()
         if not missings:
@@ -110,7 +106,7 @@ def missing_active():
 
 
 @app.route("/v1/missing/{id}", methods=['GET'], authorizer=authorizer)
-def missing_one(id):
+def get_missing_by_id(id):
     with contextlib.closing(session_factory()) as session:
         missing = session.query(Missing).get(id)
         if not missing:
@@ -124,7 +120,7 @@ def missing_one(id):
 
 
 @app.route("/v1/resident", methods=['GET'], authorizer=authorizer)
-def resident_all():
+def list_all_residents():
     with contextlib.closing(session_factory()) as session:
         residents = session.query(Resident).all()
         if not residents:
@@ -137,8 +133,8 @@ def resident_all():
             return result.data
 
 
-@app.route("/v1/resident/active", methods=['GET'], authorizer=authorizer)
-def resident_active():
+@app.route("/v1/resident/missing", methods=['GET'], authorizer=authorizer)
+def list_missing_residents():
     with contextlib.closing(session_factory()) as session:
         residents = session.query(Resident).filter(Resident.status == 1).all()
         if not residents:
@@ -152,7 +148,7 @@ def resident_active():
 
 
 @app.route("/v1/resident/{id}", methods=['GET'], authorizer=authorizer)
-def resident_one(id):
+def get_resident_by_id(id):
     with contextlib.closing(session_factory()) as session:
         resident = session.query(Resident).get(id)
         if not resident:
@@ -166,7 +162,7 @@ def resident_one(id):
 
 
 @app.route("/v1/resident/{id}/caregivers", methods=['GET'], authorizer=authorizer)
-def resident_caregivers(id):
+def list_caregivers_by_resident_id(id):
     with contextlib.closing(session_factory()) as session:
         resident = session.query(Resident).get(id)
         if not resident:
@@ -180,7 +176,7 @@ def resident_caregivers(id):
 
 
 @app.route('/v1/beacon', methods=['GET'], authorizer=authorizer)
-def beacon_list():
+def list_all_beacons():
     with contextlib.closing(session_factory()) as session:
         beacons = session.query(Beacon).all()
         if not beacons:
@@ -194,7 +190,7 @@ def beacon_list():
 
 
 @app.route('/v1/beacon/{id}', methods=['GET'], authorizer=authorizer)
-def beacon_one(id):
+def get_beacon_by_id(id):
     with contextlib.closing(session_factory()) as session:
         beacon = session.query(Beacon).get(id)
         if not beacon:
@@ -208,7 +204,7 @@ def beacon_one(id):
 
 
 @app.route('/v1/beacon/missing', methods=['GET'], authorizer=authorizer)
-def beacon_missing():
+def list_beacons_of_active_missing_cases():
     with contextlib.closing(session_factory()) as session:
         beacons = session.query(Beacon) \
             .join(Resident, Resident.id == Beacon.resident_id) \
@@ -226,7 +222,7 @@ def beacon_missing():
 
 
 @app.route('/v1/beacon/missing_uuid', methods=['GET'], authorizer=authorizer)
-def beacon_missing_uuid():
+def list_uuid_of_active_missing_cases_beacons():
     with contextlib.closing(session_factory()) as session:
         beacons = session.query(Beacon) \
             .join(Resident, Resident.id == Beacon.resident_id) \
@@ -245,7 +241,7 @@ def beacon_missing_uuid():
 # Report of new missing case automatically close existing active missing cases
 ##
 @app.route('/v1/missing', methods=['POST'], authorizer=authorizer)
-def add_missing():
+def create_new_missing_case():
     json_body = app.current_request.json_body
 
     # Load json data into object
@@ -270,6 +266,8 @@ def add_missing():
                          'closed_at': datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')})
             # Add new missing case
             session.add(missing)
+            # Notify other caregivers
+            notify_new_missing(db_session=session, missing=missing)
             # Call flush() to update id value in missing
             session.flush()
             session.commit()
@@ -280,7 +278,7 @@ def add_missing():
 
 
 @app.route('/v1/missing/close', methods=['PUT'], authorizer=authorizer)
-def close_missing():
+def close_missing_case():
     json_body = app.current_request.json_body
 
     # Load json data into object
@@ -313,42 +311,9 @@ def close_missing():
             session.rollback()
             raise ChaliceViewError(str(e))
 
-    # json_body = app.current_request.json_body
-    # message = ""
-    # beacon_id = json_body['beacon_id']
-    # user_id = json_body['user_id']
-    # longitude = round(float(json_body['longitude']), 8)
-    # latitude = round(float(json_body['latitude']), 8)
-    # conn = connect_database()
-    # with conn.cursor() as cur:
-    #     sql = "SELECT * FROM location WHERE beacon_id={}".format(beacon_id)
-    #     sql_response = cur.execute(sql)
-    #     if sql_response == 0:
-    #         with conn.cursor() as cur:
-    #             sql = "INSERT INTO location (beacon_id,user_id,longitude,latitude) VALUES ({},{},{},{})".format(
-    #                 beacon_id, user_id, longitude, latitude)
-    #             cur.execute(sql)
-    #         message = "Successfully insert"
-    #     else:
-    #         with conn.cursor() as cur:
-    #             sql = "UPDATE location SET longitude={},latitude={},user_id={} WHERE beacon_id={}".format(longitude,
-    #                                                                                                       latitude,
-    #                                                                                                       user_id,
-    #                                                                                                       beacon_id)
-    #             cur.execute(sql)
-    #         message = "Successfully updated"
-    # with conn.cursor() as cur:
-    #     sql = "INSERT INTO location_history (beacon_id,user_id,longitude,latitude) VALUES ({},{},{},{})".format(
-    #         beacon_id, user_id, longitude, latitude)
-    #     cur.execute(sql)
-    # conn.commit()
-    # conn.close()
-    # prepare_message(beacon_id)
-    # return {"Message": message}
-
 
 @app.route('/v1/beacon/{id}/enable', methods=['PUT'], authorizer=authorizer)
-def enable_beacon(id):
+def enable_beacon_by_id(id):
     with contextlib.closing(session_factory()) as session:
         try:
             beacon = session.query(Beacon).get(id)
@@ -364,7 +329,7 @@ def enable_beacon(id):
 
 
 @app.route('/v1/beacon/{id}/disable', methods=['PUT'], authorizer=authorizer)
-def disable_beacon(id):
+def disable_beacon_by_id(id):
     with contextlib.closing(session_factory()) as session:
         try:
             beacon = session.query(Beacon).get(id).first()
@@ -380,7 +345,7 @@ def disable_beacon(id):
 
 
 @app.route('/v1/location', methods=['POST'], authorizer=authorizer)
-def add_location():
+def add_location_by_beacon_id():
     json_body = app.current_request.json_body
     # Load json data into object
     schema = LocationSchema(exclude=('user', 'locator', 'resident', '', ''))
@@ -404,8 +369,7 @@ def add_location():
 
             # Send notification on 1st time found
             if not (missing.latitude and missing.longitude):
-                # TODO
-                pass
+                notify_found_missing(db_session=session, missing=missing)
 
             # Update latest location to missing
             missing.latitude = location.latitude
@@ -423,7 +387,7 @@ def add_location():
 
 
 @app.route('/v1/location/beacon', methods=['POST'], authorizer=authorizer)
-def beacon_location():
+def add_location_by_beacon_info():
     json_body = app.current_request.json_body
     # Load json data into object
     schema = LocationBeaconSchema()
@@ -455,8 +419,7 @@ def beacon_location():
 
             # Send notification on 1st time found
             if not (missing.latitude and missing.longitude):
-                # TODO
-                pass
+                notify_found_missing(db_session=session, missing=missing)
 
             # Update latest location to missing
             missing.latitude = location.latitude
@@ -472,6 +435,32 @@ def beacon_location():
         except exc.SQLAlchemyError as e:
             session.rollback()
             raise ChaliceViewError(str(e))
+
+
+@app.schedule(Rate(1, unit=Rate.HOURS))
+def expire_missing_case(event):
+    ago_24_hours = datetime.utcnow() - timedelta(days=1)
+    with contextlib.closing(session_factory()) as session:
+        try:
+            expired_list = session.query(Missing).filter(Missing.created_at < ago_24_hours, Missing.status == 1).all()
+            for expired_missing in expired_list:
+                # Update missing case as expired
+                expired_missing.status = 0
+                expired_missing.closure = 'Expired after 24 hours'
+                expired_missing.closed_at = datetime.utcnow()
+                session.merge(expired_missing)
+                # Notify all caregivers
+                notify_expired_missing(db_session=session, missing=expired_missing)
+            session.flush()
+            session.commit()
+        except exc.SQLAlchemyError as e:
+            session.rollback()
+            raise ChaliceViewError(str(e))
+
+
+@app.route('/v1/test', methods=['GET'], authorizer=authorizer)
+def hello():
+    return {'hello': 'world'}
 
 
 @app.route('/v1/user/notification_status', methods=['POST'], authorizer=authorizer)
