@@ -29,33 +29,32 @@ def send_emails(emails, content):
   subject = content['subject']
   message = content['message']
   try:
-        ses_client.send_email(
-          Source=from_address,
-          Destination={
-            'ToAddresses': emails,
-          },
-          Message={
-            'Subject': {
-              'Data': subject,
-              'Charset': 'utf8'
-            },
-            'Body': {
-              'Text': {
-                'Data': message,
-                'Charset': 'utf8'
-              }
-            }
-          },
-          ReplyToAddresses=[
-            from_address
-          ]
-        )
-      except Exception as e:
-        print e.message     
+    ses_client.send_email(
+      Source=from_address,
+      Destination={
+        'ToAddresses': emails,
+      },
+      Message={
+        'Subject': {
+          'Data': subject,
+          'Charset': 'utf8'
+        },
+        'Body': {
+          'Text': {
+            'Data': message,
+            'Charset': 'utf8'
+          }
+        }
+      },
+      ReplyToAddresses=[
+        from_address
+      ]
+    )
+  except Exception as e:
+    print e.message     
 
 
 def send_sms(phones, content):
-	def send_sms(phoneNumbers, content):
   subject = content['subject']
   message = content['message']
   sns_client.set_sms_attributes(
