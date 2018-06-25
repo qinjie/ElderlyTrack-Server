@@ -97,8 +97,8 @@ def login():
             raise NotFoundError("User not found")
 
         # Add to token ==> email + "|" + role
-        jwt_token = get_jwt_token(user.email + "," + str(user.role), password, user.password_salt, user.password_hash,
-                                  JWT_SECRET)
+        jwt_token = get_jwt_token(user.email + "," + str(user.role) + "," + str(user.id), password, user.password_salt,
+                                  user.password_hash, JWT_SECRET)
         return json.dumps({"token": jwt_token}, cls=DatetimeEncoder)
 
 
