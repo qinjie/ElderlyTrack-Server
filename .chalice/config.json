@@ -27,6 +27,32 @@
         "subnet-23daec55",
         "subnet-a5b9b4c1"
       ]
+    },
+    "locatlkyawlin": {
+      "api_gateway_stage": "localkyawlin",
+      "manage_iam_role": false,
+      "iam_role_arn": "arn:aws:iam::498107424281:role/lambda-vpc-execution-role",
+      "environment_variables": {
+        "PINPOINT_ACCESS_KEY_ID": "AKIAIVUZMXV4RPNA6TXQ",
+        "PINPOINT_SECRET_ACCESS_KEY": "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",
+        "PINPOINT_REGION_NAME": "us-east-1",
+        "SES_REGION": "us-east-1",
+      	"SNS_REGION": "ap-southeast-1",
+      	"EMAIL_ADMIN": "admin@elderlytrack.com",
+        "DB_HOST": "iot-centre-rds.crqhd2o1amcg.ap-southeast-1.rds.amazonaws.com",
+        "DB_NAME": "elderly_track",
+        "DB_USERNAME": "root",
+        "DB_PASSWORD": "Soe7014Ece"
+      },
+      "lambda_memory_size": 128,
+      "lambda_timeout": 60,
+      "security_group_ids": [
+        "sg-7c94a61b"
+      ],
+      "subnet_ids": [
+        "subnet-23daec55",
+        "subnet-a5b9b4c1"
+      ]
     }
   }
 }

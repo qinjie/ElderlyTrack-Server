@@ -95,10 +95,10 @@ def login():
         user = session.query(User).filter(User.email == email).first()
         if not user:
             raise NotFoundError("User not found")
-
+        print("{}, {}, {}".format(user.email, user.role, user.id))
         # Add to token ==> email + "|" + role
-        jwt_token = get_jwt_token(user.email + "," + str(user.role) + "," + str(user.id), password, user.password_salt,
-                                  user.password_hash, JWT_SECRET)
+        jwt_token = get_jwt_token(user.email + "," + str(user.role) + "," + str(user.id) + "," + user.name, password,
+                                  user.password_salt, user.password_hash, JWT_SECRET)
         return json.dumps({"token": jwt_token}, cls=DatetimeEncoder)
 
 

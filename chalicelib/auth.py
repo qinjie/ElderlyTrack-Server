@@ -63,6 +63,8 @@ def encode_password(password, salt=None):
 def verify_password(password, salt, hashed_password):
     result = encode_password(password=password, salt=salt)
     input_password = result['hashed']
+    print(input_password)
+    print(hashed_password)
     if hmac.compare_digest(input_password, hashed_password):
         return True
     else:
