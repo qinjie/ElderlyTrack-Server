@@ -115,6 +115,29 @@ def login_anonymous():
     return response.data
 
 
+# TODO
+# Generate a 5-digits-passcode and save it in user_token table.
+# Set user_token.label to PASSWORD_RESET and expire in 24 hours
+# Send email to user with the code
+@app.route('/v1/user/forgot_password', methods=['POST'], authorizer=None)
+def forgot_password():
+    pass
+
+
+# TODO
+# Check validity of token and update password
+# Sample Input
+#     {
+#       "email":"qinjie@np.edu.sg",
+#       "token":"12345",
+#       "new_password":"abcd1234"
+#     }
+# Return login token if it is successful,
+@app.route('/v1/user/reset_password', methods=['POST'], authorizer=None)
+def login_anonymous():
+    pass
+
+
 @app.route("/v1/missing", methods=['GET'], authorizer=authorizer)
 def list_all_missing_cases():
     with contextlib.closing(session_factory()) as session:
