@@ -1,6 +1,5 @@
 import json
 
-
 # JSON encoder for SET object type
 from datetime import datetime, date
 

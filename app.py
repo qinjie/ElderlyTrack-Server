@@ -99,7 +99,9 @@ def login():
         # Add to token ==> email + "|" + role
         jwt_token = get_jwt_token(user.email + "," + str(user.role) + "," + str(user.id) + "," + user.name, password,
                                   user.password_salt, user.password_hash, JWT_SECRET)
-        return json.dumps({"token": jwt_token}, cls=DatetimeEncoder)
+        schema = UserSchema(only=('id', 'role', 'status', 'user_profile'))
+        info = schema.dumps(user).data
+        return json.dumps({"token": jwt_token, 'user': info}, cls=DatetimeEncoder)
 
 
 @app.route('/v1/user/login_anonymous', methods=['GET'], authorizer=None)

@@ -1,8 +1,9 @@
 # coding: utf-8
-from .base import Base
 from sqlalchemy import Integer, Column, DECIMAL, Date, DateTime, ForeignKey, Index, SMALLINT, String, TIMESTAMP, text, \
     Table
 from sqlalchemy.orm import relationship
+
+from .base import Base
 
 caregiver_table = Table('caregiver', Base.metadata,
                         Column('user_id', Integer, ForeignKey('user.id')),

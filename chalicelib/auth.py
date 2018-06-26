@@ -1,9 +1,9 @@
 import base64
 import datetime
-from uuid import uuid4
 import hashlib
 import hmac
 import os
+from uuid import uuid4
 
 import jwt
 from chalice import UnauthorizedError

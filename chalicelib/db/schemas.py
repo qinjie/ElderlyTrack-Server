@@ -3,6 +3,7 @@
 # https://marshmallow.readthedocs.io/en/latest/examples.html#quotes-api-flask-sqlalchemy
 ###
 from datetime import datetime
+
 from marshmallow import Schema, fields, ValidationError, pre_load, post_load
 
 # Custom validator
