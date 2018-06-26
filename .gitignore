@@ -5,3 +5,4 @@ pymysql/
 *.pyc
 template.yaml
 
+.idea/workspace.xml

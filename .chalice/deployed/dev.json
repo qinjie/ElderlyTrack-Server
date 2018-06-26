@@ -7,6 +7,21 @@
       "role_name": "elderly_track-dev"
     },
     {
+      "name": "send_verification_email",
+      "resource_type": "lambda_function",
+      "lambda_arn": "arn:aws:lambda:ap-southeast-1:498107424281:function:elderly_track-dev-send_verification_email"
+    },
+    {
+      "name": "send_emails",
+      "resource_type": "lambda_function",
+      "lambda_arn": "arn:aws:lambda:ap-southeast-1:498107424281:function:elderly_track-dev-send_emails"
+    },
+    {
+      "name": "send_sms",
+      "resource_type": "lambda_function",
+      "lambda_arn": "arn:aws:lambda:ap-southeast-1:498107424281:function:elderly_track-dev-send_sms"
+    },
+    {
       "name": "expire_missing_case",
       "resource_type": "lambda_function",
       "lambda_arn": "arn:aws:lambda:ap-southeast-1:498107424281:function:elderly_track-dev-expire_missing_case"

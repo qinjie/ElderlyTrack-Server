@@ -9,13 +9,13 @@ from chalice import Chalice, NotFoundError, ChaliceViewError, Rate, \
     AuthResponse
 from sqlalchemy import exc
 
-from chalicelib import constants
+from chalicelib import constants, config
 from chalicelib.auth import JWT_SECRET
 from chalicelib.auth import encode_password, get_jwt_token, decode_jwt_token, gen_jwt_token, \
     get_authorized_user
 from chalicelib.db.base import session_factory
 from chalicelib.db.schemas import *
-from chalicelib.helper import notify_expired_missing, notify_found_missing, notify_new_missing, send_verification_email
+from chalicelib.helper import notify_expired_missing, notify_found_missing, notify_new_missing, send_verification_email_lambda
 from chalicelib.utils import SetEncoder
 
 db_host = "iot-centre-rds.crqhd2o1amcg.ap-southeast-1.rds.amazonaws.com"
@@ -23,14 +23,15 @@ db_name = "elderly_track"
 db_username = "root"
 db_password = "Soe7014Ece"
 
-pinpoint_client = boto3.client(
-    'pinpoint',
-    aws_access_key_id='AKIAIVUZMXV4RPNA6TXQ',
-    aws_secret_access_key='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',
-    region_name='us-east-1'
-)
+ses_client = boto3.client('ses', region_name=config.SES_REGION)
+sns_client = boto3.client('sns', region_name=config.SNS_REGION)
 
 app = Chalice(app_name="elderly_track")
+
+
+# Debug mode
+# authorizer = None             # Set to None to disable authorization
+app.debug = True
 
 
 # JWT Token Authorizer
@@ -42,9 +43,66 @@ def authorizer(auth_request):
     return AuthResponse(routes=['*'], principal_id=decoded['sub'])
 
 
-# Debug mode
-# authorizer = None             # Set to None to disable authorization
-app.debug = True
+# Send Verification email to caregiver upon registered
+@app.lambda_function()
+def send_verification_email(event, context):
+    email = event['email']
+    ses_client.send_custom_verification_email(
+        EmailAddress=email,
+        TemplateName='EmailVerification',
+        ConfigurationSetName='EmailVerification'
+    )
+
+
+@app.lambda_function()
+def send_emails(event, context):
+    emails = event['emails']
+    content = event['content']
+    from_address = config.EMAIL_ADMIN
+    subject = content['subject']
+    message = content['message']
+    ses_client.send_email(
+        Source=from_address,
+        Destination={
+            'ToAddresses': emails
+        },
+        Message={
+            'Subject': {
+                'Data': subject,
+                'Charset': 'utf8'
+            },
+            'Body': {
+                'Text': {
+                    'Data': message,
+                    'Charset': 'utf8'
+                }
+            }
+        },
+        ReplyToAddresses=[from_address]
+    )
+
+
+@app.lambda_function()
+def send_sms(event, context):
+    phones = event['phones']
+    content = event['content']
+    subject = content['subject']
+    message = content['message']
+    sns_client.set_sms_attributes(
+        attributes={
+            'DefaultSenderID': 'Elderly'
+        }
+    )
+    for phone in phones:
+        try:
+            sns_client.publish(
+                PhoneNumber=phone,
+                Message=message,
+                Subject=subject
+            )
+        except Exception as e:
+            print
+            e.message
 
 
 @app.route('/v1/user/register_with_email', methods=['POST'], authorizer=None)
@@ -70,7 +128,7 @@ def register():
             session.commit()
             user_schema = UserSchema(exclude=('password_hash', 'salt', 'access_token'))
             result = user_schema.dump(user)
-            send_verification_email(email)
+            send_verification_email_lambda(email)
             if result.errors:  # errors not empty
                 raise ChaliceViewError(result.errors)
             return result.data
@@ -523,127 +581,6 @@ def expire_missing_case(event):
 def hello():
     result = get_authorized_user(app.current_request)
     return result
-
-
-@app.route('/v1/user/notification_status', methods=['POST'], authorizer=authorizer)
-def notification_status():
-    conn = connect_database()
-    json_body = app.current_request.json_body
-    user_id = json_body['user_id']
-    status = 0
-    with conn.cursor() as cur:
-        sql = "SELECT pinpoint_status FROM user WHERE id={}".format(user_id)
-        cur.execute(sql)
-        for row in cur:
-            status = row[0]
-    return {"status": status}
-
-
-@app.route('/v1/pinpoint/register_endpoint', methods=['POST'], authorizer=authorizer)
-def register_endpoint():
-    conn = connect_database()
-    json_body = app.current_request.json_body
-    pinpoint_endpoint = json_body['endpointID']
-    user_id = json_body['user_id']
-    message = ""
-    with conn.cursor() as cur:
-        sql = "SELECT id FROM user WHERE endpointID='{}'".format(pinpoint_endpoint)
-        response = cur.execute(sql)
-        if response != 0:
-            for row in cur:
-                with conn.cursor() as cur2:
-                    sql = "UPDATE user SET endpointID=NULL, pinpoint_status=0 WHERE id={}".format(row[0])
-                    cur2.execute(sql)
-
-    with conn.cursor() as cur:
-        sql = "UPDATE user SET endpointID='{}', pinpoint_status=1 WHERE id={}".format(pinpoint_endpoint, user_id)
-        cur.execute(sql)
-        message = "Successfully registered endpoint for: {}".format(user_id)
-    conn.commit()
-    conn.close()
-    return json.dumps({"Message": message})
-
-
-@app.route('/v1/pinpoint/disable_endpoint', methods=['POST'], authorizer=authorizer)
-def disable_endpoint():
-    conn = connect_database()
-    json_body = app.current_request.json_body
-    user_id = json_body['user_id']
-    message = ""
-    status = 0
-    with conn.cursor() as cur:
-        sql = "SELECT pinpoint_status from user where id={}".format(user_id)
-        response = cur.execute(sql)
-        for row in cur:
-            if row[0] == 1:
-                status = 0
-                message = "Successfully disabled notification for user:{}".format(user_id)
-            else:
-                status = 1
-                message = "Successfully enabled notification for user:{}".format(user_id)
-    with conn.cursor() as cur:
-        sql = "UPDATE user set pinpoint_status={} WHERE id={}".format(status, user_id)
-        cur.execute(sql)
-    conn.commit()
-    conn.close()
-    return {"Message": message, "status": status}
-
-
-def prepare_message(beacon_id):
-    conn = connect_database()
-    resident_id = 0
-    body = ""
-    title = "Update"
-    payload = {}
-    endpoints = {}
-
-    with conn.cursor() as cur:
-        sql = "SELECT resident_id FROM beacon WHERE id={}".format(beacon_id)
-        cur.execute(sql)
-        for row in cur:
-            resident_id = row[0]
-
-    with conn.cursor() as cur:
-        sql = "SELECT fullname FROM resident where id={}".format(resident_id)
-        cur.execute(sql)
-    for row in cur:
-        body = "{}'s location has been reported.".format(row[0])
-
-    with conn.cursor() as cur:
-        sql = "SELECT DISTINCT user.endpointID FROM user INNER JOIN caregiver on user.id=caregiver.relative_id AND caregiver.resident_id={}".format(
-            resident_id)
-        cur.execute(sql)
-
-    for row in cur:
-        if row[0] != None:
-            endpoints[row[0]] = {}
-
-    payload['body'] = body
-    payload['title'] = title
-    payload['endpoints'] = endpoints
-
-    sent_message(payload)
-
-
-def sent_message(event):
-    endpoints = event['endpoints']
-    title = event['title']
-    body = event['body']
-    print("Endpoints: {}".format(endpoints))
-    response = pinpoint_client.send_messages(
-        ApplicationId='b080c5f132c24c52930fe52cf32b7038',
-        MessageRequest={
-            'Endpoints': endpoints,
-            'MessageConfiguration': {
-                'APNSMessage': {
-                    'Action': 'OPEN_APP',
-                    'Body': body,
-                    'Title': title
-                }
-            }
-        }
-    )
-    return response
 
 
 def connect_database():
