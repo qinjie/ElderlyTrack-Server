@@ -1,26 +1,22 @@
+import contextlib
 import json
-from datetime import datetime, timedelta
-import os
+from datetime import timedelta
 
-import pymysql
 import boto3
-from chalice import Chalice, NotFoundError, ChaliceViewError, CognitoUserPoolAuthorizer, ConflictError, Rate, \
-    UnauthorizedError, AuthResponse
-from chalice import IAMAuthorizer
+import pymysql
 from chalice import BadRequestError
+from chalice import Chalice, NotFoundError, ChaliceViewError, Rate, \
+    AuthResponse
 from sqlalchemy import exc
 
 from chalicelib import constants
-from chalicelib.auth import encode_password, verify_password, get_jwt_token, decode_jwt_token, gen_jwt_token, \
+from chalicelib.auth import JWT_SECRET
+from chalicelib.auth import encode_password, get_jwt_token, decode_jwt_token, gen_jwt_token, \
     get_authorized_user
 from chalicelib.db.base import session_factory
-from chalicelib.db.models import *
 from chalicelib.db.schemas import *
-import contextlib
-
 from chalicelib.helper import notify_expired_missing, notify_found_missing, notify_new_missing, send_verification_email
-from chalicelib.utils import SetEncoder, DatetimeEncoder
-from chalicelib.auth import JWT_SECRET
+from chalicelib.utils import SetEncoder
 
 db_host = "iot-centre-rds.crqhd2o1amcg.ap-southeast-1.rds.amazonaws.com"
 db_name = "elderly_track"
@@ -97,20 +93,26 @@ def login():
             raise NotFoundError("User not found")
         print("{}, {}, {}".format(user.email, user.role, user.id))
         # Add to token ==> email + "|" + role
-        jwt_token = get_jwt_token(user.email + "," + str(user.role) + "," + str(user.id) + "," + user.name, password,
+        jwt_token = get_jwt_token(user.email + "," + str(user.role) + "," + str(user.id), password,
                                   user.password_salt, user.password_hash, JWT_SECRET)
-        schema = UserSchema(only=('id', 'role', 'status', 'user_profile'))
-        info = schema.dumps(user).data
-        return json.dumps({"token": jwt_token, 'user': info}, cls=DatetimeEncoder)
+        info = {'token': jwt_token, 'user': user}
+        schema = TokenSchema()
+        response = schema.dumps(info)
+        if response.errors:
+            raise ChaliceViewError(response.errors)
+        return response.data
 
 
 @app.route('/v1/user/login_anonymous', methods=['GET'], authorizer=None)
 def login_anonymous():
     data = ',' + str(constants.USER_ROLE_ANONYMOUS)
-    print(data)
     jwt_token = gen_jwt_token(data, JWT_SECRET)
-    print(jwt_token)
-    return json.dumps({"token": jwt_token}, cls=DatetimeEncoder)
+    info = {'token': jwt_token, 'user': None}
+    schema = TokenSchema()
+    response = schema.dumps(info)
+    if response.errors:
+        raise ChaliceViewError(response.errors)
+    return response.data
 
 
 @app.route("/v1/missing", methods=['GET'], authorizer=authorizer)

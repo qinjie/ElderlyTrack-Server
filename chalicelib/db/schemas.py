@@ -15,6 +15,11 @@ def must_not_be_blank(data):
         raise ValidationError('Data not provided.')
 
 
+class TokenSchema(Schema):
+    token = fields.Str()
+    user = fields.Nested('UserSchema', only=('id', 'role', 'status', 'email', 'username', 'user_profile'))
+
+
 class GpsSchema(Schema):
     id = fields.Int()
     latitude = fields.Decimal(required=True)
