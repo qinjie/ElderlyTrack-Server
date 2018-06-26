@@ -1,11 +1,15 @@
 # Return emails and phones of related cargives
 import boto3
+import json
 
 from chalicelib import config
 from chalicelib.db.models import UserProfile, Caregiver, Resident
 
+from chalicelib.utils import SetEncoder
+
 ses_client = boto3.client('ses', region_name=config.SES_REGION)
 sns_client = boto3.client('sns', region_name=config.SNS_REGION)
+lambda_client = boto3.client('lambda', region_name=config.LAMBDA_REGION)
 
 
 def get_caregiver_emails_phones(db_session, missing):
@@ -25,54 +29,39 @@ def get_caregiver_emails_phones(db_session, missing):
 
 
 def send_emails(emails, content):
-    from_address = config.EMAIL_ADMIN
-    subject = content['subject']
-    message = content['message']
-    try:
-        ses_client.send_email(
-            Source=from_address,
-            Destination={
-                'ToAddresses': emails,
-            },
-            Message={
-                'Subject': {
-                    'Data': subject,
-                    'Charset': 'utf8'
-                },
-                'Body': {
-                    'Text': {
-                        'Data': message,
-                        'Charset': 'utf8'
-                    }
-                }
-            },
-            ReplyToAddresses=[
-                from_address
-            ]
-        )
-    except Exception as e:
-        print
-        e.message
+    payload = {
+        'emails': emails,
+        'content': content
+    }
+    lambda_client.invoke(
+        FunctionName='elderly_track-dev-send_emails',
+        InvocationType='Event',
+        LogType='Tail',
+        Payload=json.dumps(payload, cls=SetEncoder)
+    )
 
 
 def send_sms(phones, content):
-    subject = content['subject']
-    message = content['message']
-    sns_client.set_sms_attributes(
-        attributes={
-            'DefaultSenderID': 'Elderly'
-        }
+    payload = {
+        'phones': phones,
+        'content': content
+    }
+    lambda_client.invoke(
+        FunctionName='elderly_track-dev-send_sms',
+        InvocationType='Event',
+        LogType='Tail',
+        Payload=json.dumps(payload, cls=SetEncoder)
     )
-    for phoneNumber in phoneNumbers:
-        try:
-            sns_client.publish(
-                PhoneNumber=phoneNumber,
-                Message=message,
-                Subject=subject
-            )
-        except Exception as e:
-            print
-            e.message
+
+
+def send_verification_email_lambda(email):
+    print(email)
+    lambda_client.invoke(
+        FunctionName='elderly_track-dev-send_verification_email',
+        InvocationType='Event',
+        LogType='Tail',
+        Payload=json.dumps({'email': email}, cls=SetEncoder)
+    )
 
 
 # Notify related caregivers by emails and sms after expired a missing case
@@ -87,8 +76,6 @@ def notify_expired_missing(db_session, missing):
         'subject': subject
     }
     # Send email to caregivers
-    title = "Missing case expired"
-    content = ""
     send_emails(emails, content)
     # Send sms to caregivers
     content = "Missing case expired: "
@@ -123,18 +110,7 @@ def notify_found_missing(db_session, missing):
         'subject': subject
     }
     # Send email to caregivers
-    title = "Missing case location detected"
-    content = ""
     send_emails(emails, content)
     # Send sms to caregivers
     content = "Missing case location detected"
     send_sms(phones, content)
-
-
-# Send Verification email to caregiver upon registered
-def send_verification_email(email):
-    ses_client.send_custom_verification_email(
-        EmailAddress=email,
-        TemplateName='EmailVerification',
-        ConfigurationSetName='EmailVerification'
-    )
