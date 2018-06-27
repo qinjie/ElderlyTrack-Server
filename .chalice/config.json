@@ -25,8 +25,8 @@
         "sg-7c94a61b"
       ],
       "subnet_ids": [
-        "subnet-23daec55",
-        "subnet-a5b9b4c1"
+        "subnet-0bb9b46f",
+        "subnet-d1ddeba7"
       ]
     },
     "locatlkyawlin": {
@@ -51,8 +51,8 @@
         "sg-7c94a61b"
       ],
       "subnet_ids": [
-        "subnet-23daec55",
-        "subnet-a5b9b4c1"
+        "subnet-0bb9b46f",
+        "subnet-d1ddeba7"
       ]
     }
   }
