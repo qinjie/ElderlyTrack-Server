@@ -1,10 +1,10 @@
 # Return emails and phones of related cargives
-import boto3
 import json
+
+import boto3
 
 from chalicelib import config
 from chalicelib.db.models import UserProfile, Caregiver, Resident
-
 from chalicelib.utils import SetEncoder
 
 ses_client = boto3.client('ses', region_name=config.SES_REGION)
@@ -56,7 +56,7 @@ def send_sms(phones, content):
 
 def send_verification_email_lambda(email):
     print(email)
-    lambda_client.invoke(
+    return lambda_client.invoke(
         FunctionName='elderly_track-dev-send_verification_email',
         InvocationType='Event',
         LogType='Tail',

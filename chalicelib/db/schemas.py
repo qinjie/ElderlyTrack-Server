@@ -191,7 +191,8 @@ class MissingSchema(Schema):
     created_at = fields.DateTime(dump_only=True)
     updated_at = fields.DateTime(dump_only=True)
 
-    resident = fields.Nested(ResidentSchema, exclude=('missings',), dump_only=True)
+    resident = fields.Nested(ResidentSchema, exclude=('missings', 'missing_active'), dump_only=True)
+    locations = fields.Nested('LocationSchema', many=True, exclude=('missing', 'resident', 'user', 'locator'), dump_only=True)
 
     @pre_load
     def pre(self, data):

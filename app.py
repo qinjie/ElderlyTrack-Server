@@ -15,7 +15,8 @@ from chalicelib.auth import encode_password, get_jwt_token, decode_jwt_token, ge
     get_authorized_user
 from chalicelib.db.base import session_factory
 from chalicelib.db.schemas import *
-from chalicelib.helper import notify_expired_missing, notify_found_missing, notify_new_missing, send_verification_email_lambda
+from chalicelib.helper import notify_expired_missing, notify_found_missing, notify_new_missing, \
+    send_verification_email_lambda
 from chalicelib.utils import SetEncoder
 
 db_host = "iot-centre-rds.crqhd2o1amcg.ap-southeast-1.rds.amazonaws.com"
@@ -27,7 +28,6 @@ ses_client = boto3.client('ses', region_name=config.SES_REGION)
 sns_client = boto3.client('sns', region_name=config.SNS_REGION)
 
 app = Chalice(app_name="elderly_track")
-
 
 # Debug mode
 # authorizer = None             # Set to None to disable authorization
@@ -128,7 +128,7 @@ def register():
             session.commit()
             user_schema = UserSchema(exclude=('password_hash', 'salt', 'access_token'))
             result = user_schema.dump(user)
-            send_verification_email_lambda(email)
+            # send_verification_email_lambda(email)
             if result.errors:  # errors not empty
                 raise ChaliceViewError(result.errors)
             return result.data
@@ -217,7 +217,8 @@ def list_active_missing_cases():
         if not missings:
             raise NotFoundError("No active missing case")
         else:
-            missings_schema = MissingSchema(many=True, exclude=('resident.caregivers', 'resident.beacons'))
+            missings_schema = MissingSchema(many=True, exclude=(
+            'resident.caregivers', 'resident.beacons', 'resident.missing_active'))
             result = missings_schema.dump(missings)
             if result.errors:  # errors not empty
                 raise ChaliceViewError(result.errors)
@@ -577,10 +578,10 @@ def expire_missing_case(event):
             raise ChaliceViewError(str(e))
 
 
-@app.route('/v1/test', methods=['GET'], authorizer=authorizer)
+@app.route('/v1/test', methods=['GET'], authorizer=None)
 def hello():
-    result = get_authorized_user(app.current_request)
-    return result
+    result = send_verification_email_lambda("qinjie@np.edu.sg")
+    return json.dumps(result)
 
 
 def connect_database():

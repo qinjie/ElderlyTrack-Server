@@ -20,7 +20,7 @@
         "DB_PASSWORD": "Soe7014Ece"
       },
       "lambda_memory_size": 128,
-      "lambda_timeout": 60,
+      "lambda_timeout": 120,
       "security_group_ids": [
         "sg-7c94a61b"
       ],
