@@ -4,7 +4,7 @@ import json
 import boto3
 
 from chalicelib import config
-from chalicelib.db.models import UserProfile, Caregiver, Resident
+from chalicelib.db.models import UserProfile, Caregiver, Resident, User
 from chalicelib.utils import SetEncoder
 
 ses_client = boto3.client('ses', region_name=config.SES_REGION)
@@ -78,7 +78,6 @@ def notify_expired_missing(db_session, missing):
     # Send email to caregivers
     send_emails(emails, content)
     # Send sms to caregivers
-    content = "Missing case expired: "
     send_sms(phones, content)
 
 
@@ -86,8 +85,10 @@ def notify_expired_missing(db_session, missing):
 def notify_new_missing(db_session, missing):
     emails, phones = get_caregiver_emails_phones(db_session, missing)
     resident = db_session.query(Resident).get(missing.resident_id)
+    user = db_session.query(User).get(missing.reported_by)
     subject = "Missing case created"
-    message = "Dear caregiver, {} is reported missing!".format(resident.fullname)
+    message = "Dear caregiver, {} is reported missing by {}!\n\nRemark: {}".format(resident.fullname,
+                                                                                   user.username, missing.remark)
     content = {
         'message': message,
         'subject': subject
@@ -95,16 +96,19 @@ def notify_new_missing(db_session, missing):
     # Send email to caregivers
     send_emails(emails, content)
     # Send sms to caregivers
-    content = "Missing case created: "
     send_sms(phones, content)
 
 
 # Notify related caregivers by emails and sms after location of a missing case is reported
-def notify_found_missing(db_session, missing):
+def notify_found_missing(db_session, missing, location):
     emails, phones = get_caregiver_emails_phones(db_session, missing)
     resident = db_session.query(Resident).get(missing.resident_id)
     subject = "Missing case location detected"
-    message = "Dear caregiver, {} is reported found.".format(resident.fullname)
+    address = ""
+    if missing.address:
+        address = "at {}".format(missing.address)
+    message = "Dear caregiver, {} is reported found {}.\n\nhttp://www.google.com/maps/place/{},{}"\
+        .format(resident.fullname, address, location.latitude, location.longitude)
     content = {
         'message': message,
         'subject': subject
@@ -112,5 +116,4 @@ def notify_found_missing(db_session, missing):
     # Send email to caregivers
     send_emails(emails, content)
     # Send sms to caregivers
-    content = "Missing case location detected"
     send_sms(phones, content)

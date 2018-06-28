@@ -1,5 +1,6 @@
 import contextlib
 import json
+import re
 from datetime import timedelta
 
 import boto3
@@ -49,8 +50,8 @@ def send_verification_email(event, context):
     email = event['email']
     ses_client.send_custom_verification_email(
         EmailAddress=email,
-        TemplateName='EmailVerification',
-        ConfigurationSetName='EmailVerification'
+        TemplateName='EmailVerification',   # Created using aws cli
+        ConfigurationSetName='EmailVerification'    # Need the configuration set before send
     )
 
 
@@ -94,6 +95,9 @@ def send_sms(event, context):
         }
     )
     for phone in phones:
+        if not phone.startswith('+65'):
+            phone = '+65' + phone
+        print(phone)
         try:
             sns_client.publish(
                 PhoneNumber=phone,
@@ -489,7 +493,7 @@ def add_location_by_beacon_id():
 
             # Send notification on 1st time found
             if not (missing.latitude and missing.longitude):
-                notify_found_missing(db_session=session, missing=missing)
+                notify_found_missing(db_session=session, missing=missing, location=location)
 
             # Update latest location to missing
             missing.latitude = location.latitude

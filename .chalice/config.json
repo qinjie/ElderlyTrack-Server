@@ -13,7 +13,7 @@
         "SES_REGION": "us-east-1",
       	"SNS_REGION": "ap-southeast-1",
         "LAMBDA_REGION": "ap-southeast-1",
-      	"EMAIL_ADMIN": "admin@elderlytrack.com",
+      	"EMAIL_ADMIN": "npeceapps@gmail.com",
         "DB_HOST": "iot-centre-rds.crqhd2o1amcg.ap-southeast-1.rds.amazonaws.com",
         "DB_NAME": "elderly_track",
         "DB_USERNAME": "root",
