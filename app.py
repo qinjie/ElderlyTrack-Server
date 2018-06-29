@@ -9,7 +9,7 @@ from chalice import Chalice, NotFoundError, ChaliceViewError, Rate, \
     AuthResponse
 from sqlalchemy import exc
 
-from chalicelib import constants, config
+from chalicelib import constants, config, auth
 from chalicelib.auth import JWT_SECRET
 from chalicelib.auth import encode_password, get_jwt_token, decode_jwt_token, gen_jwt_token
 from chalicelib.db.base import session_factory
@@ -165,7 +165,7 @@ def login():
 
 @app.route('/v1/user/login_anonymous', methods=['GET'], authorizer=None)
 def login_anonymous():
-    data = ',' + str(constants.USER_ROLE_ANONYMOUS)
+    data = ',' + str(constants.USER_ROLE_ANONYMOUS) + "," + str(0)
     jwt_token = gen_jwt_token(data, JWT_SECRET)
     info = {'token': jwt_token, 'user': None}
     schema = TokenSchema()
@@ -249,6 +249,25 @@ def list_all_residents():
             raise NotFoundError("No resident found")
         else:
             residents_schema = ResidentSchema(exclude=('beacons', 'missings', 'caregivers'), many=True)
+            result = residents_schema.dump(residents)
+            if result.errors:  # errors not empty
+                raise ChaliceViewError(result.errors)
+            return result.data
+
+
+# Return list of residents who are related to current user
+@app.route("/v1/resident/relative", methods=['GET'], authorizer=authorizer)
+def list_relative_residents():
+    current_user = auth.get_authorized_user(app.current_request)
+    with contextlib.closing(session_factory()) as session:
+        residents = session.query(Resident) \
+            .join(Caregiver, Caregiver.resident_id == Resident.id) \
+            .filter(Caregiver.user_id == current_user['id']) \
+            .all()
+        if not residents:
+            raise NotFoundError("No resident found")
+        else:
+            residents_schema = ResidentSchema(exclude=('beacons', 'missings', 'caregivers', 'missing_active.locations'), many=True)
             result = residents_schema.dump(residents)
             if result.errors:  # errors not empty
                 raise ChaliceViewError(result.errors)
