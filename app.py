@@ -258,11 +258,15 @@ def list_all_residents():
 @app.route("/v1/resident/missing", methods=['GET'], authorizer=authorizer)
 def list_missing_residents():
     with contextlib.closing(session_factory()) as session:
-        residents = session.query(Resident).filter(Resident.status == 1).all()
+        residents = session.query(Resident) \
+            .join(Missing, Missing.resident_id == Resident.id) \
+            .filter(Resident.status == 1, Missing.status == 1) \
+            .all()
         if not residents:
             raise NotFoundError("No active resident found")
         else:
-            residents_schema = ResidentSchema(exclude=('beacons', 'missings', 'caregivers', 'missing_active.locations'), many=True)
+            residents_schema = ResidentSchema(exclude=('beacons', 'missings', 'caregivers', 'missing_active.locations'),
+                                              many=True)
             result = residents_schema.dump(residents)
             if result.errors:  # errors not empty
                 raise ChaliceViewError(result.errors)
@@ -510,7 +514,7 @@ def add_location_by_beacon_id():
 
 @app.route('/v1/location/one', methods=['POST'], authorizer=authorizer)
 def add_location_detail_one():
-    #TODO
+    # TODO
     json_body = app.current_request.json_body
     # Load json data into object
     schema = LocationSchema(exclude=('user', 'locator', 'resident', '', ''))
@@ -547,7 +551,7 @@ def add_location_detail_one():
 
 @app.route('/v1/location/batch', methods=['POST'], authorizer=authorizer)
 def add_location_in_batch():
-    #TODO
+    # TODO
     json_body = app.current_request.json_body
     # Load json data into object
     schema = LocationSchema(many=True, exclude=('user', 'locator', 'resident', '', ''))
