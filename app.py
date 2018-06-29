@@ -17,7 +17,7 @@ from chalicelib.auth import encode_password, get_jwt_token, decode_jwt_token, ge
 from chalicelib.db.base import session_factory
 from chalicelib.db.schemas import *
 from chalicelib.helper import notify_expired_missing, notify_found_missing, notify_new_missing, \
-    send_verification_email_lambda
+    notify_close_missing
 from chalicelib.utils import SetEncoder
 
 db_host = "iot-centre-rds.crqhd2o1amcg.ap-southeast-1.rds.amazonaws.com"
@@ -42,17 +42,6 @@ def authorizer(auth_request):
     decoded = decode_jwt_token(token, JWT_SECRET)
     # Here login_info = email + "|" + role
     return AuthResponse(routes=['*'], principal_id=decoded['sub'])
-
-
-# Send Verification email to caregiver upon registered
-@app.lambda_function()
-def send_verification_email(event, context):
-    email = event['email']
-    ses_client.send_custom_verification_email(
-        EmailAddress=email,
-        TemplateName='EmailVerification',   # Created using aws cli
-        ConfigurationSetName='EmailVerification'    # Need the configuration set before send
-    )
 
 
 @app.lambda_function()
@@ -132,7 +121,6 @@ def register():
             session.commit()
             user_schema = UserSchema(exclude=('password_hash', 'salt', 'access_token'))
             result = user_schema.dump(user)
-            # send_verification_email_lambda(email)
             if result.errors:  # errors not empty
                 raise ChaliceViewError(result.errors)
             return result.data
@@ -426,6 +414,7 @@ def close_missing_case():
             count = session.query(Missing).filter(Missing.resident_id == missing.resident_id, Missing.status == 1) \
                 .update({'status': 0, 'closed_by': missing.closed_by, 'closure': missing.closure,
                          'closed_at': datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')})
+            notify_close_missing(db_session=session, missing=missing)
             # Call flush() to update id value in missing
             session.flush()
             session.commit()

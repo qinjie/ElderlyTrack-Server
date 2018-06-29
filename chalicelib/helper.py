@@ -54,23 +54,34 @@ def send_sms(phones, content):
     )
 
 
-def send_verification_email_lambda(email):
-    print(email)
-    return lambda_client.invoke(
-        FunctionName='elderly_track-dev-send_verification_email',
-        InvocationType='Event',
-        LogType='Tail',
-        Payload=json.dumps({'email': email}, cls=SetEncoder)
-    )
-
-
 # Notify related caregivers by emails and sms after expired a missing case
 def notify_expired_missing(db_session, missing):
     emails, phones = get_caregiver_emails_phones(db_session, missing)
     resident = db_session.query(Resident).get(missing.resident_id)
     subject = "Missing case expired"
-    message = "Dear caregiver, {} missing case is expired. Please report again if the elderly is not found yet".format(
+    message = "Dear caregiver, {}'s missing case is expired. \nPlease report again if the elderly is not found yet".format(
         resident.fullname)
+    content = {
+        'message': message,
+        'subject': subject
+    }
+    # Send email to caregivers
+    send_emails(emails, content)
+    # Send sms to caregivers
+    send_sms(phones, content)
+
+
+# Notify related caregivers by emails and sms after closing a missing case
+def notify_close_missing(db_session, missing):
+    emails, phones = get_caregiver_emails_phones(db_session, missing)
+    resident = db_session.query(Resident).get(missing.resident_id)
+    user = db_session.query(User).get(missing.closed_by)
+    subject = "Missing case closed"
+    closure = 'no closure'
+    if missing.closure:
+        closure = missing.closure
+    message = "Dear caregiver, {}'s missing case is closed by {}.\n\nClosure: {}".format(resident.fullname,
+                                                                                         user.username, closure)
     content = {
         'message': message,
         'subject': subject
