@@ -262,7 +262,7 @@ def list_missing_residents():
         if not residents:
             raise NotFoundError("No active resident found")
         else:
-            residents_schema = ResidentSchema(exclude=('beacons', 'missings', 'caregivers'), many=True)
+            residents_schema = ResidentSchema(exclude=('beacons', 'missings', 'caregivers', 'missing_active.locations'), many=True)
             result = residents_schema.dump(residents)
             if result.errors:  # errors not empty
                 raise ChaliceViewError(result.errors)
