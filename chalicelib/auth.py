@@ -33,10 +33,11 @@ def gen_jwt_token(data, jwt_secret):
 
 def get_authorized_user(current_request):
     data = current_request.context['authorizer']['principalId'].split(',')
-    data = (data + 2 * [''])[:2]
+    data = (data + 3 * [''])[:3]
     email = data[0]
     role = data[1]
-    return {"email": email, "role": role}
+    user_id = data[2]
+    return {"email": email, "role": role, 'id': user_id}
 
 
 def decode_jwt_token(token, jwt_secret):
