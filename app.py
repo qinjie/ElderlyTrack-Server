@@ -1,6 +1,7 @@
 import contextlib
 import json
-from datetime import timedelta
+from random import randint
+from datetime import timedelta, datetime
 
 import boto3
 import pymysql
@@ -11,11 +12,12 @@ from sqlalchemy import exc
 
 from chalicelib import constants, config, auth
 from chalicelib.auth import JWT_SECRET
-from chalicelib.auth import encode_password, get_jwt_token, decode_jwt_token, gen_jwt_token
+from chalicelib.auth import encode_password, get_jwt_token, decode_jwt_token, gen_jwt_token, \
+    encode_password_reset_token, verify_password_reset_token
 from chalicelib.db.base import session_factory
 from chalicelib.db.schemas import *
 from chalicelib.helper import notify_expired_missing, notify_found_missing, notify_new_missing, \
-    notify_close_missing
+    notify_close_missing, notify_password_reset
 from chalicelib.utils import SetEncoder
 
 db_host = "iot-centre-rds.crqhd2o1amcg.ap-southeast-1.rds.amazonaws.com"
@@ -163,27 +165,78 @@ def login_anonymous():
     return response.data
 
 
-# TODO
-# Generate a 5-digits-passcode and save it in user_token table.
-# Set user_token.label to PASSWORD_RESET and expire in 24 hours
-# Send email to user with the code
 @app.route('/v1/user/forgot_password', methods=['POST'], authorizer=None)
 def forgot_password():
-    pass
+    json_body = app.current_request.json_body
+    email = json_body['email']
+    if not email:
+        raise BadRequestError("Email must be supplied.")
+    # Generate 5 digit code
+    token = str(randint(10000, 99999))
+    expire = datetime.now() + timedelta(days=1)
+    label = 'PASSWORD_RESET'
+    # Invalid JSON body
+    with contextlib.closing(session_factory()) as session:
+        try:
+            user = session.query(User).filter(User.email == email).first()
+            if not user:
+                raise NotFoundError("User not found")
+            # Uncomment this if we want to hash the token
+            result = encode_password_reset_token(token=token, salt=user.password_salt)
+            hashed_token = result['hashed']
+            user_token = session.query(UserToken).filter(UserToken.user_id == user.id).first()
+            if not user_token:
+                schema = UserTokenSchema()
+                json_body['user_id'] = user.id
+                json_body['token'] = hashed_token
+                user_token, errors = schema.load(json_body)
+                user_token.expire = expire
+                user_token.label = label
+                session.add(user_token)
+            else:
+                # Update the existing user_token
+                session.query(UserToken).filter(UserToken.user_id == user.id).update({'token': hashed_token,
+                                                                                      'expire': expire, 'label': label})
+                session.flush()
+            session.commit()
+            notify_password_reset(db_session=session, user=user, token=token)
+            return json.dumps({"token": token})
+        except exc.SQLAlchemyError as e:
+            session.rollback()
+            raise ChaliceViewError(str(e))
 
 
-# TODO
-# Check validity of token and update password
-# Sample Input
-#     {
-#       "email":"qinjie@np.edu.sg",
-#       "token":"12345",
-#       "new_password":"abcd1234"
-#     }
-# Return login token if it is successful,
 @app.route('/v1/user/reset_password', methods=['POST'], authorizer=None)
-def login_anonymous():
-    pass
+def reset_password():
+    json_body = app.current_request.json_body
+    email = json_body['email']
+    token = str(json_body['token'])
+    password = json_body['password']
+    if not (email or password or token):
+        raise BadRequestError("Email, password and token mush be supplied.")
+    with contextlib.closing(session_factory()) as session:
+        user = session.query(User).filter(User.email == email).first()
+        user_token = session.query(UserToken).filter(UserToken.user_id == user.id).first()
+        if not user:
+            raise NotFoundError("User not found")
+        if datetime.now() > user_token.expire:
+            raise BadRequestError("Token is expired.")
+        if not user_token:
+            raise BadRequestError("Please request for a token first")
+        if not verify_password_reset_token(token=token, salt=user.password_salt, hashed_token=user_token.token):
+            raise BadRequestError("Token is invalid")
+        result = encode_password(password=password, salt=user.password_salt)
+        session.query(User).filter(User.email == email).update({'password_hash': result['hashed']})
+        session.flush()
+        session.commit()
+        jwt_token = get_jwt_token(user.email + "," + str(user.role) + "," + str(user.id), password,
+                                  user.password_salt, user.password_hash, JWT_SECRET)
+        info = {'token': jwt_token, 'user': user}
+        schema = TokenSchema()
+        response = schema.dumps(info)
+        if response.errors:
+            raise ChaliceViewError(response.errors)
+        return response.data
 
 
 @app.route("/v1/missing", methods=['GET'], authorizer=authorizer)

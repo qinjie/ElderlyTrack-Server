@@ -70,3 +70,24 @@ def verify_password(password, salt, hashed_password):
         return True
     else:
         return False
+
+
+def encode_password_reset_token(token, salt):
+    token = token.encode()
+    salt = salt.encode()
+    rounds = 100000
+    hashed = hashlib.pbkdf2_hmac('sha256', token, salt, rounds)
+    return {
+        'hashed': base64.b64encode(hashed).decode('utf-8')
+    }
+
+
+def verify_password_reset_token(token, salt, hashed_token):
+    result = encode_password_reset_token(token, salt)
+    input_token = result['hashed']
+    print(input_token)
+    print(hashed_token)
+    if hmac.compare_digest(input_token, hashed_token):
+        return True
+    else:
+        return False

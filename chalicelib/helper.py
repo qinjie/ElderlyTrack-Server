@@ -128,3 +128,17 @@ def notify_found_missing(db_session, missing, location):
     send_emails(emails, content)
     # Send sms to caregivers
     send_sms(phones, content)
+
+
+def notify_password_reset(db_session, user, token):
+    user_profile = db_session.query(UserProfile).filter(UserProfile.user_id == user.id).first()
+    subject = "Password reset"
+    message = "Dear {}, you have requested for a password reset. Please use the following " \
+              "code to change your password.\n\nIf this is not your request, please ignore this email.\n\n{}"\
+        .format(user.username, token)
+    content = {
+        'message': message,
+        'subject': subject
+    }
+    # Send email to user
+    send_emails([user_profile.email], content)
