@@ -845,8 +845,9 @@ def expire_missing_case(event):
 
 @app.route('/v1/test', methods=['GET'], authorizer=None)
 def hello():
-    result = send_verification_email_lambda("qinjie@np.edu.sg")
-    return json.dumps(result)
+    # No need to verify email
+    # result = send_verification_email_lambda("qinjie@np.edu.sg")
+    return json.dumps({message: "Success"})
 
 
 def connect_database():

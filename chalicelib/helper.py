@@ -59,8 +59,8 @@ def notify_expired_missing(db_session, missing):
     emails, phones = get_caregiver_emails_phones(db_session, missing)
     resident = db_session.query(Resident).get(missing.resident_id)
     subject = "Missing case expired"
-    message = "Dear caregiver, {}'s missing case is expired. \nPlease report again if the elderly is not found yet".format(
-        resident.fullname)
+    message = "Dear caregiver, {}'s missing case is expired. \nPlease report again if the elderly is not found yet"\
+        .format(resident.fullname)
     content = {
         'message': message,
         'subject': subject
@@ -77,11 +77,11 @@ def notify_close_missing(db_session, missing):
     resident = db_session.query(Resident).get(missing.resident_id)
     user = db_session.query(User).get(missing.closed_by)
     subject = "Missing case closed"
-    closure = 'no closure'
+    closure = ""
     if missing.closure:
-        closure = missing.closure
-    message = "Dear caregiver, {}'s missing case is closed by {}.\n\nClosure: {}".format(resident.fullname,
-                                                                                         user.username, closure)
+        closure = "Closure: {}".format(missing.closure)
+    message = "Dear caregiver, {}'s missing case is closed by {}.\n\n{}".format(resident.fullname,
+                                                                                user.username, closure)
     content = {
         'message': message,
         'subject': subject
@@ -98,8 +98,11 @@ def notify_new_missing(db_session, missing):
     resident = db_session.query(Resident).get(missing.resident_id)
     user = db_session.query(User).get(missing.reported_by)
     subject = "Missing case created"
-    message = "Dear caregiver, {} is reported missing by {}!\n\nRemark: {}".format(resident.fullname,
-                                                                                   user.username, missing.remark)
+    remark = ""
+    if missing.remark:
+        remark = "Remark: {}".format(missing.remark)
+    message = "Dear caregiver, {} is reported missing by {}!\n\n{}".format(resident.fullname,
+                                                                           user.username, remark)
     content = {
         'message': message,
         'subject': subject
@@ -115,10 +118,10 @@ def notify_found_missing(db_session, missing, location):
     emails, phones = get_caregiver_emails_phones(db_session, missing)
     resident = db_session.query(Resident).get(missing.resident_id)
     subject = "Missing case location detected"
-    address = ""
+    address = "."
     if missing.address:
-        address = "at {}".format(missing.address)
-    message = "Dear caregiver, {} is reported found {}.\n\nhttp://www.google.com/maps/place/{},{}"\
+        address = " at {}.".format(missing.address)
+    message = "Dear caregiver, {}'s location is reported{}\n\nhttp://www.google.com/maps/place/{},{}"\
         .format(resident.fullname, address, location.latitude, location.longitude)
     content = {
         'message': message,
