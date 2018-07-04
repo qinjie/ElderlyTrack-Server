@@ -1,7 +1,7 @@
 import contextlib
 import json
+from datetime import timedelta
 from random import randint
-from datetime import timedelta, datetime
 
 import boto3
 import pymysql
@@ -308,7 +308,8 @@ def list_relative_residents():
         if not residents:
             raise NotFoundError("No resident found")
         else:
-            residents_schema = ResidentSchema(exclude=('beacons', 'missings', 'caregivers', 'missing_active.locations'), many=True)
+            residents_schema = ResidentSchema(exclude=('beacons', 'missings', 'caregivers', 'missing_active.locations'),
+                                              many=True)
             result = residents_schema.dump(residents)
             if result.errors:  # errors not empty
                 raise ChaliceViewError(result.errors)
@@ -389,6 +390,22 @@ def get_beacon_by_id(id):
             return result.data
 
 
+@app.route('/v1/beacon/resident/{resident_id}', methods=['GET'], authorizer=authorizer)
+def get_beacon_by_resident_id(resident_id):
+    with contextlib.closing(session_factory()) as session:
+        beacons = session.query(Beacon) \
+            .join(Resident, Resident.id == Beacon.resident_id) \
+            .filter(Resident.id == resident_id).all()
+        if not beacons:
+            raise NotFoundError("No beacon found")
+        else:
+            beacons_schema = BeaconSchema(exclude=('resident',), many=True)
+            result = beacons_schema.dump(beacons)
+            if result.errors:  # errors not empty
+                raise ChaliceViewError(result.errors)
+            return result.data
+
+
 @app.route('/v1/beacon/missing', methods=['GET'], authorizer=authorizer)
 def list_beacons_of_active_missing_cases():
     with contextlib.closing(session_factory()) as session:
@@ -463,6 +480,46 @@ def create_new_missing_case():
             raise ChaliceViewError(str(e))
 
 
+##
+# Same as /v1/missing except it returns data instead of [data, errors]
+##
+@app.route('/v1/missing2', methods=['POST'], authorizer=authorizer)
+def create_new_missing_case2():
+    json_body = app.current_request.json_body
+
+    # Load json data into object
+    missing_schema = MissingSchema(
+        exclude=('resident.beacons', 'resident.missings', 'resident.missing_active', 'resident.caregivers'))
+    missing, errors = missing_schema.load(json_body)
+    # Invalid JSON body
+    if errors:
+        raise ChaliceViewError(errors)
+
+    with contextlib.closing(session_factory()) as session:
+        try:
+            # Check resident id is valid
+            resident = session.query(Resident).get(missing.resident_id)
+            if not resident:
+                raise NotFoundError('Resident not exists')
+            resident.status = 1
+            session.merge(resident)
+            # Close existing active missing cases
+            session.query(Missing).filter(Missing.resident_id == missing.resident_id, Missing.status == 1) \
+                .update({'status': 0, 'closed_by': missing.reported_by,
+                         'closed_at': datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')})
+            # Add new missing case
+            session.add(missing)
+            # Notify other caregivers
+            notify_new_missing(db_session=session, missing=missing)
+            # Call flush() to update id value in missing
+            session.flush()
+            session.commit()
+            return missing_schema.dump(missing).data
+        except exc.SQLAlchemyError as e:
+            session.rollback()
+            raise ChaliceViewError(str(e))
+
+
 @app.route('/v1/missing/close', methods=['PUT'], authorizer=authorizer)
 def close_missing_case():
     json_body = app.current_request.json_body
@@ -499,6 +556,46 @@ def close_missing_case():
             raise ChaliceViewError(str(e))
 
 
+##
+# Similiar to /v1/missing/close
+#  Return Missing array instead of with count
+#
+@app.route('/v1/missing/close2', methods=['PUT'], authorizer=authorizer)
+def close_missing_case2():
+    json_body = app.current_request.json_body
+
+    # Load json data into object
+    schema = MissingClosingSchema()
+    missing, errors = schema.load(json_body)
+    # Invalid JSON body
+    if errors:
+        raise ChaliceViewError(errors)
+
+    with contextlib.closing(session_factory()) as session:
+        try:
+            # Check resident id is valid
+            resident = session.query(Resident).get(missing.resident_id)
+            if not resident:
+                raise NotFoundError('Resident not exists')
+            resident.status = 0
+            session.merge(resident)
+            # Close existing active missing cases
+            updated = session.query(Missing).filter(Missing.resident_id == missing.resident_id,
+                                                    Missing.status == 1).all()
+            count = session.query(Missing).filter(Missing.resident_id == missing.resident_id, Missing.status == 1) \
+                .update({'status': 0, 'closed_by': missing.closed_by, 'closure': missing.closure,
+                         'closed_at': datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')})
+            notify_close_missing(db_session=session, missing=missing)
+            # Call flush() to update id value in missing
+            session.flush()
+            session.commit()
+            schema = MissingClosingSchema(many=True)
+            return schema.dump(updated).data
+        except exc.SQLAlchemyError as e:
+            session.rollback()
+            raise ChaliceViewError(str(e))
+
+
 @app.route('/v1/beacon/{id}/enable', methods=['PUT'], authorizer=authorizer)
 def enable_beacon_by_id(id):
     with contextlib.closing(session_factory()) as session:
@@ -529,6 +626,26 @@ def disable_beacon_by_id(id):
         except exc.SQLAlchemyError as e:
             session.rollback()
             raise ChaliceViewError(str(e))
+
+
+@app.route('/v1/location/missing/{missing_id}', methods=['GET'], authorizer=authorizer)
+def list_latest_locations_of_missing_case(missing_id):
+    with contextlib.closing(session_factory()) as session:
+        locations = session.query(Location) \
+            .join(Missing, Missing.id == Location.missing_id) \
+            .filter(Missing.id == missing_id) \
+            .order_by(Location.id.desc()) \
+            .limit(20) \
+            .all()
+        if not locations:
+            raise NotFoundError("No location of this missing case found")
+        else:
+            locations_schema = LocationSchema(many=True,
+                                              exclude=('resident', 'missing', 'locator', 'user'))
+            result = locations_schema.dump(locations)
+            if result.errors:  # errors not empty
+                raise ChaliceViewError(result.errors)
+            return result.data
 
 
 @app.route('/v1/location', methods=['POST'], authorizer=authorizer)
@@ -714,8 +831,11 @@ def expire_missing_case(event):
                 expired_missing.closure = 'Expired after 24 hours'
                 expired_missing.closed_at = datetime.utcnow()
                 session.merge(expired_missing)
+                # Update resident status to 0 if missing is closed
+                session.query(Resident).get(expired_missing.resident_id).update({'status': 0})
                 # Notify all caregivers
                 notify_expired_missing(db_session=session, missing=expired_missing)
+
             session.flush()
             session.commit()
         except exc.SQLAlchemyError as e:
