@@ -304,6 +304,7 @@ def list_relative_residents():
         residents = session.query(Resident) \
             .join(Caregiver, Caregiver.resident_id == Resident.id) \
             .filter(Caregiver.user_id == current_user['id']) \
+            .order_by(Resident.status.desc(), Resident.fullname.asc()) \
             .all()
         if not residents:
             raise NotFoundError("No resident found")
@@ -591,6 +592,26 @@ def close_missing_case2():
             session.commit()
             schema = MissingClosingSchema(many=True)
             return schema.dump(updated).data
+        except exc.SQLAlchemyError as e:
+            session.rollback()
+            raise ChaliceViewError(str(e))
+
+
+@app.route('/v1/beacon/{id}/status/{status}', methods=['PUT'], authorizer=authorizer)
+def update_beacon_status_by_id(id, status):
+    if int(status) not in [0, 1]:
+        raise BadRequestError("Status value can only be 0 or 1")
+    with contextlib.closing(session_factory()) as session:
+        try:
+            beacon = session.query(Beacon).get(id)
+            if beacon is None:
+                raise NotFoundError("Beacon ({}) not exists.".format(id))
+            count = session.query(Beacon).filter(Beacon.id == id).update({'status': status})
+            # Call flush() to update id value in missing
+            session.flush()
+            session.commit()
+            schema = BeaconSchema(exclude=('resident',))
+            return schema.dump(beacon).data
         except exc.SQLAlchemyError as e:
             session.rollback()
             raise ChaliceViewError(str(e))
