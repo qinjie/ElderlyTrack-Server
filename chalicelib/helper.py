@@ -59,7 +59,7 @@ def notify_expired_missing(db_session, missing):
     emails, phones = get_caregiver_emails_phones(db_session, missing)
     resident = db_session.query(Resident).get(missing.resident_id)
     subject = "Missing case expired"
-    message = "Dear caregiver, {}'s missing case is expired. \nPlease report again if the elderly is not found yet"\
+    message = "Dear caregiver, {}'s missing case is expired. \nPlease report again if the elderly is not found yet" \
         .format(resident.fullname)
     content = {
         'message': message,
@@ -121,7 +121,7 @@ def notify_found_missing(db_session, missing, location):
     address = "."
     if missing.address:
         address = " at {}.".format(missing.address)
-    message = "Dear caregiver, {}'s location is reported{}\n\nhttp://www.google.com/maps/place/{},{}"\
+    message = "Dear caregiver, {}'s location is reported{}\n\nhttp://www.google.com/maps/place/{},{}" \
         .format(resident.fullname, address, location.latitude, location.longitude)
     content = {
         'message': message,
@@ -137,7 +137,9 @@ def notify_password_reset(db_session, user, token):
     user_profile = db_session.query(UserProfile).filter(UserProfile.user_id == user.id).first()
     subject = "Password reset"
     message = "Dear {}, you have requested for a password reset. Please use the following " \
-              "code to change your password.\n\nIf this is not your request, please ignore this email.\n\n{}"\
+              "code to change your password.\n\n" \
+              "Reset Code: {}\n\n" \
+              "If this is not your request, please ignore this email." \
         .format(user.username, token)
     content = {
         'message': message,

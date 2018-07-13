@@ -1,5 +1,7 @@
+import base64
 import contextlib
 import json
+import os
 from datetime import timedelta
 from random import randint
 
@@ -119,6 +121,11 @@ def register():
         try:
             session.add(user)
             session.commit()
+            user_profile = UserProfile()
+            user_profile.email = user.email
+            user_profile.user_id = user.id
+            session.add(user_profile)
+            session.commit()
             user_schema = UserSchema(exclude=('password_hash', 'salt', 'access_token'))
             result = user_schema.dump(user)
             if result.errors:  # errors not empty
@@ -182,6 +189,10 @@ def forgot_password():
             if not user:
                 raise NotFoundError("User not found")
             # Uncomment this if we want to hash the token
+            if user.password_salt is None:
+                user.password_salt = base64.b64encode(os.urandom(16)).decode('utf-8')
+                session.merge(user)
+
             result = encode_password_reset_token(token=token, salt=user.password_salt)
             hashed_token = result['hashed']
             user_token = session.query(UserToken).filter(UserToken.user_id == user.id).first()
@@ -198,9 +209,17 @@ def forgot_password():
                 session.query(UserToken).filter(UserToken.user_id == user.id).update({'token': hashed_token,
                                                                                       'expire': expire, 'label': label})
                 session.flush()
+
+            if not user.user_profile:
+                user_profile = UserProfile()
+                user_profile.user_id = user.id
+                user_profile.email = user.email
+                session.add(user_profile)
+
             session.commit()
             notify_password_reset(db_session=session, user=user, token=token)
-            return json.dumps({"token": token})
+            # return json.dumps({"token": token})
+            return "Reset code has been emailed to you."
         except exc.SQLAlchemyError as e:
             session.rollback()
             raise ChaliceViewError(str(e))
@@ -442,6 +461,7 @@ def list_uuid_of_active_missing_cases_beacons():
 
 
 ##
+# Obsolete
 # Report of new missing case automatically close existing active missing cases
 ##
 @app.route('/v1/missing', methods=['POST'], authorizer=authorizer)
@@ -521,6 +541,9 @@ def create_new_missing_case2():
             raise ChaliceViewError(str(e))
 
 
+#
+# Obsolete
+#
 @app.route('/v1/missing/close', methods=['PUT'], authorizer=authorizer)
 def close_missing_case():
     json_body = app.current_request.json_body
@@ -558,7 +581,7 @@ def close_missing_case():
 
 
 ##
-# Similiar to /v1/missing/close
+#  Similar to /v1/missing/close
 #  Return Missing array instead of with count
 #
 @app.route('/v1/missing/close2', methods=['PUT'], authorizer=authorizer)
@@ -673,7 +696,7 @@ def list_latest_locations_of_missing_case(missing_id):
 def add_location_by_beacon_id():
     json_body = app.current_request.json_body
     # Load json data into object
-    schema = LocationSchema(exclude=('user', 'locator', 'resident', 'beacon', 'missing.locations'))
+    schema = LocationSchema(exclude=('user', 'locator', 'resident', 'beacon', 'missing'))
     location, errors = schema.load(json_body)
     # Invalid JSON body
     if errors:
@@ -684,6 +707,8 @@ def add_location_by_beacon_id():
             beacon = session.query(Beacon).get(location.beacon_id)
             if not beacon:
                 raise BadRequestError("Invalid beacon id")
+            if beacon.status != 1:
+                raise BadRequestError("Beacon is disabled")
             missing = session.query(Missing) \
                 .filter(Missing.resident_id == beacon.resident_id, Missing.status == 1).first()
             if not missing:
@@ -711,84 +736,6 @@ def add_location_by_beacon_id():
             raise ChaliceViewError(str(e))
 
 
-@app.route('/v1/location/one', methods=['POST'], authorizer=authorizer)
-def add_location_detail_one():
-    # TODO
-    json_body = app.current_request.json_body
-    # Load json data into object
-    schema = LocationSchema(exclude=('user', 'locator', 'resident', '', ''))
-    location, errors = schema.load(json_body)
-    # Invalid JSON body
-    if errors:
-        raise ChaliceViewError(errors)
-    with contextlib.closing(session_factory()) as session:
-        try:
-            missing = session.query(Missing) \
-                .filter(Missing.resident_id == location.resident_id, Missing.status == 1).first()
-            if not missing:
-                raise BadRequestError("No active missing case")
-            session.add(location)
-
-            # Send notification on 1st time found
-            if not (missing.latitude and missing.longitude):
-                notify_found_missing(db_session=session, missing=missing, location=location)
-
-            # Update latest location to missing
-            missing.latitude = location.latitude
-            missing.longitude = location.longitude
-            missing.address = location.address
-            session.merge(missing)
-
-            # Call flush() to update id value in missing
-            session.flush()
-            session.commit()
-            return json.dumps({"count": count})
-        except exc.SQLAlchemyError as e:
-            session.rollback()
-            raise ChaliceViewError(str(e))
-
-
-@app.route('/v1/location/batch', methods=['POST'], authorizer=authorizer)
-def add_location_in_batch():
-    # TODO
-    json_body = app.current_request.json_body
-    # Load json data into object
-    schema = LocationSchema(many=True, exclude=('user', 'locator', 'resident', '', ''))
-    result, errors = schema.load(json_body)
-    # Invalid JSON body
-    if errors:
-        raise ChaliceViewError(errors)
-
-    with contextlib.closing(session_factory()) as session:
-        try:
-            count = 0
-            for location in data:
-                missing = session.query(Missing) \
-                    .filter(Missing.resident_id == location.resident_id, Missing.status == 1).first()
-                if not missing:
-                    raise BadRequestError("No active missing case")
-                count = count + 1
-                session.add(location)
-
-                # Send notification on 1st time found
-                if not (missing.latitude and missing.longitude):
-                    notify_found_missing(db_session=session, missing=missing, location=location)
-
-                # Update latest location to missing
-                missing.latitude = location.latitude
-                missing.longitude = location.longitude
-                missing.address = location.address
-                session.merge(missing)
-
-                # Call flush() to update id value in missing
-                session.flush()
-                session.commit()
-            return json.dumps({"count": count})
-        except exc.SQLAlchemyError as e:
-            session.rollback()
-            raise ChaliceViewError(str(e))
-
-
 @app.route('/v1/location/beacon', methods=['POST'], authorizer=authorizer)
 def add_location_by_beacon_info():
     json_body = app.current_request.json_body
@@ -805,7 +752,8 @@ def add_location_by_beacon_info():
                                                   Beacon.minor == location['minor']).first()
             if not beacon:
                 raise BadRequestError("Invalid beacon id")
-
+            if beacon.status != 1:
+                raise BadRequestError("Beacon is disabled")
             missing = session.query(Missing).filter(Missing.resident_id == beacon.resident_id,
                                                     Missing.status == 1).first()
             if not missing:
@@ -868,7 +816,7 @@ def expire_missing_case(event):
 def hello():
     # No need to verify email
     # result = send_verification_email_lambda("qinjie@np.edu.sg")
-    return json.dumps({message: "Success"})
+    return json.dumps({'message': "Success"})
 
 
 def connect_database():
