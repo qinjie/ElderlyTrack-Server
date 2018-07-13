@@ -219,7 +219,7 @@ def forgot_password():
             session.commit()
             notify_password_reset(db_session=session, user=user, token=token)
             # return json.dumps({"token": token})
-            return "Reset code has been emailed to you."
+            return json.dumps({'message': 'Reset code has been emailed to you.'})
         except exc.SQLAlchemyError as e:
             session.rollback()
             raise ChaliceViewError(str(e))
