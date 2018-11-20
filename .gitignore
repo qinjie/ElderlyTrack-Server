@@ -25,3 +25,4 @@ template.yaml
 .idea/**/gradle.xml
 .idea/**/libraries
 
+__pycache__

@@ -180,6 +180,9 @@ class UserProfile(Base):
 class UserToken(Base):
     __tablename__ = 'user_token'
 
+    LABEL_PASSWORD_RESET = 'PASSWORD_RESET'
+    LABEL_ACCESS = 'ACCESS'
+
     id = Column(Integer, primary_key=True)
     user_id = Column(ForeignKey(u'user.id', ondelete=u'CASCADE', onupdate=u'CASCADE'), nullable=False, index=True)
     token = Column(String(32), nullable=False, unique=True, server_default=text("''"))
@@ -210,3 +213,16 @@ class Location(Base):
     beacon = relationship(u'Beacon', uselist=False)
     # user = relationship(u'User', uselist=False)
     # locator = relationship(u'Locator', uselist=False)
+
+
+class Setting(Base):
+    __tablename__ = 'setting'
+
+    LABEL_MINUTES_TO_EXPIRE_CASE = 1001
+
+    id = Column(Integer, primary_key=True)
+    label = Column(Integer, nullable=False, unique=True)
+    val = Column(String(20), nullable=False)
+    remark = Column(String(100))
+    created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
+    updated_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"))

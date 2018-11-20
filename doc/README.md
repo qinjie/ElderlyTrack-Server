@@ -36,7 +36,7 @@ sudo apt install python-minimal
 sudo apt install python-mysqldb
 sudo apt install python-pip
 pip install sqlacodegen
-sqlacodegen mysql://root:Soe7014Ece@iot-centre-rds.crqhd2o1amcg.ap-southeast-1.rds.amazonaws.com/elderly_track > models.py
+sqlacodegen mysql://username:password@iot-centre-rds.crqhd2o1amcg.ap-southeast-1.rds.amazonaws.com/elderly_track > models.py
 ```
 
 ## marshmallow
@@ -46,7 +46,7 @@ an ORM/ODM/framework-agnostic library for converting complex datatypes, such as 
 Generate pip requirements.txt file based on imports of any project
 ```
 pip install pipreqs
-pipreqs /home/project/location
+pipreqs --force /home/project/location
 ```
 
 

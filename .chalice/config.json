@@ -26,7 +26,8 @@
       ],
       "subnet_ids": [
         "subnet-0bb9b46f",
-        "subnet-d1ddeba7"
+        "subnet-d1ddeba7",
+        "subnet-00e679562dca6d48f"
       ]
     },
     "locatlkyawlin": {

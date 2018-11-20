@@ -11,6 +11,7 @@ from chalice import BadRequestError
 from chalice import Chalice, NotFoundError, ChaliceViewError, Rate, \
     AuthResponse
 from sqlalchemy import exc
+from sqlalchemy import and_
 
 from chalicelib import constants, config, auth
 from chalicelib.auth import JWT_SECRET
@@ -19,7 +20,7 @@ from chalicelib.auth import encode_password, get_jwt_token, decode_jwt_token, ge
 from chalicelib.db.base import session_factory
 from chalicelib.db.schemas import *
 from chalicelib.helper import notify_expired_missing, notify_found_missing, notify_new_missing, \
-    notify_close_missing, notify_password_reset
+    notify_close_missing, notify_password_reset, expire_missing_case_minutes_older
 from chalicelib.utils import SetEncoder
 
 db_host = "iot-centre-rds.crqhd2o1amcg.ap-southeast-1.rds.amazonaws.com"
@@ -53,25 +54,31 @@ def send_emails(event, context):
     from_address = config.EMAIL_ADMIN
     subject = content['subject']
     message = content['message']
-    ses_client.send_email(
-        Source=from_address,
-        Destination={
-            'ToAddresses': emails
-        },
-        Message={
-            'Subject': {
-                'Data': subject,
-                'Charset': 'utf8'
+    try:
+        resp = ses_client.send_email(
+            Source=from_address,
+            Destination={
+                'ToAddresses': emails
             },
-            'Body': {
-                'Text': {
-                    'Data': message,
+            Message={
+                'Subject': {
+                    'Data': subject,
                     'Charset': 'utf8'
+                },
+                'Body': {
+                    'Text': {
+                        'Data': message,
+                        'Charset': 'utf8'
+                    }
                 }
-            }
-        },
-        ReplyToAddresses=[from_address]
-    )
+            },
+            ReplyToAddresses=[from_address]
+        )
+        print(resp)
+    except Exception as e:
+        print(str(e))
+        return json.dumps({'status': 'Failed', 'message': str(e)})
+    return json.dumps({'status': 'Successful', 'message': resp})
 
 
 @app.lambda_function()
@@ -86,7 +93,7 @@ def send_sms(event, context):
         }
     )
     for phone in phones:
-        if not phone.startswith('+65'):
+        if not phone.startswith('+'):
             phone = '+65' + phone
         print(phone)
         try:
@@ -96,8 +103,7 @@ def send_sms(event, context):
                 Subject=subject
             )
         except Exception as e:
-            print
-            e.message
+            print(str(e))
 
 
 @app.route('/v1/user/register_with_email', methods=['POST'], authorizer=None)
@@ -181,8 +187,7 @@ def forgot_password():
     # Generate 5 digit code
     token = str(randint(10000, 99999))
     expire = datetime.now() + timedelta(days=1)
-    label = 'PASSWORD_RESET'
-    # Invalid JSON body
+
     with contextlib.closing(session_factory()) as session:
         try:
             user = session.query(User).filter(User.email == email).first()
@@ -195,19 +200,22 @@ def forgot_password():
 
             result = encode_password_reset_token(token=token, salt=user.password_salt)
             hashed_token = result['hashed']
-            user_token = session.query(UserToken).filter(UserToken.user_id == user.id).first()
+            user_token = session.query(UserToken).filter(
+                and_(UserToken.user_id == user.id, UserToken.label == UserToken.LABEL_PASSWORD_RESET)).first()
             if not user_token:
                 schema = UserTokenSchema()
                 json_body['user_id'] = user.id
                 json_body['token'] = hashed_token
                 user_token, errors = schema.load(json_body)
                 user_token.expire = expire
-                user_token.label = label
+                user_token.label = UserToken.LABEL_PASSWORD_RESET
                 session.add(user_token)
+                session.flush()
             else:
                 # Update the existing user_token
-                session.query(UserToken).filter(UserToken.user_id == user.id).update({'token': hashed_token,
-                                                                                      'expire': expire, 'label': label})
+                user_token.token = hashed_token
+                user_token.expire = expire
+                user_token.label = UserToken.LABEL_PASSWORD_RESET
                 session.flush()
 
             if not user.user_profile:
@@ -215,12 +223,13 @@ def forgot_password():
                 user_profile.user_id = user.id
                 user_profile.email = user.email
                 session.add(user_profile)
+                session.flush()
 
             session.commit()
             notify_password_reset(db_session=session, user=user, token=token)
             # return json.dumps({"token": token})
-            return json.dumps({'message': 'Reset code has been emailed to you.'})
-        except exc.SQLAlchemyError as e:
+            return json.dumps({'Code': 'Successful', 'Message': 'Reset code has been emailed to you.'})
+        except Exception as e:
             session.rollback()
             raise ChaliceViewError(str(e))
 
@@ -341,10 +350,10 @@ def list_missing_residents():
     with contextlib.closing(session_factory()) as session:
         residents = session.query(Resident) \
             .join(Missing, Missing.resident_id == Resident.id) \
-            .filter(Resident.status == 1, Missing.status == 1) \
+            .filter(and_(Resident.status == 1, Missing.status == 1)) \
             .all()
         if not residents:
-            raise NotFoundError("No active resident found")
+            raise NotFoundError("No missing resident found")
         else:
             residents_schema = ResidentSchema(exclude=('beacons', 'missings', 'caregivers', 'missing_active.locations'),
                                               many=True)
@@ -458,6 +467,20 @@ def list_uuid_of_active_missing_cases_beacons():
             for beacon in beacons:
                 uuid_list.add(beacon.uuid)
             return json.dumps({"uuid_list": uuid_list}, cls=SetEncoder)
+
+
+@app.route("/v1/setting", methods=['GET'], authorizer=None)
+def list_settings():
+    with contextlib.closing(session_factory()) as session:
+        settings = session.query(Setting).all()
+        if not settings:
+            raise NotFoundError("No setting available")
+        else:
+            settings_schema = SettingSchema(many=True)
+            result = settings_schema.dump(settings)
+            if result.errors:  # errors not empty
+                raise ChaliceViewError(result.errors)
+            return result.data
 
 
 ##
@@ -788,28 +811,23 @@ def add_location_by_beacon_info():
             raise ChaliceViewError(str(e))
 
 
-@app.schedule(Rate(1, unit=Rate.HOURS))
+@app.schedule(Rate(30, unit=Rate.MINUTES))
 def expire_missing_case(event):
-    ago_24_hours = datetime.utcnow() - timedelta(days=1)
     with contextlib.closing(session_factory()) as session:
+        minutes = 24 * 60  # by default 24 hours
         try:
-            expired_list = session.query(Missing).filter(Missing.created_at < ago_24_hours, Missing.status == 1).all()
-            for expired_missing in expired_list:
-                # Update missing case as expired
-                expired_missing.status = 0
-                expired_missing.closure = 'Expired after 24 hours'
-                expired_missing.closed_at = datetime.utcnow()
-                session.merge(expired_missing)
-                # Update resident status to 0 if missing is closed
-                session.query(Resident).get(expired_missing.resident_id).update({'status': 0})
-                # Notify all caregivers
-                notify_expired_missing(db_session=session, missing=expired_missing)
+            setting = session.query(Setting).filter(Setting.label == Setting.LABEL_MINUTES_TO_EXPIRE_CASE)
+            if setting:
+                minutes = int(setting.val)
+        except Exception as e:
+            print(str(e))
 
-            session.flush()
-            session.commit()
-        except exc.SQLAlchemyError as e:
-            session.rollback()
-            raise ChaliceViewError(str(e))
+        expire_missing_case_minutes_older(minutes)
+
+
+@app.route('/v1/expire-minutes-older/{minutes}', methods=['POST'], authorizer=authorizer)
+def expire_hours_older(minutes):
+    expire_missing_case_minutes_older(minutes)
 
 
 @app.route('/v1/test', methods=['GET'], authorizer=None)

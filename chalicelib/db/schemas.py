@@ -295,3 +295,12 @@ class LocationBeaconSchema(Schema):
     locator_id = fields.Int()
     user_id = fields.Int()
     created_at = fields.DateTime(dump_only=True)
+
+
+class SettingSchema(Schema):
+    id = fields.Int()
+    label = fields.Int(required=True)
+    val = fields.Str(required=True)
+    remark = fields.Str()
+    created_at = fields.DateTime(dump_only=True)
+    updated_at = fields.DateTime(dump_only=True)
